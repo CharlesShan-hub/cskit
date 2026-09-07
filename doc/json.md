@@ -116,6 +116,36 @@ public class JacksonJsonAdapter implements JsonAdapter {
 registry.register("jackson", new JacksonJsonAdapter());
 ```
 
+### 5. 接入自定义适配器（冷门库 / 公司自研库）
+
+框架基于「接口 + 注册表」设计，**天然支持任何自定义适配器**——冷门库、公司自研库都能接入：
+
+```java
+// ① 实现 JsonAdapter 接口（把公司库 API 翻译成门面 5 个方法）
+public class CompanyJsonAdapter implements JsonAdapter {
+    @Override
+    public String toJson(Object obj) { return CompanyJsonLib.toJsonString(obj); }
+    @Override
+    public <T> T fromJson(String json, Class<T> classOfT) { return CompanyJsonLib.parseObject(json, classOfT); }
+    @Override
+    public <T> T fromJson(String json, Type type) { return CompanyJsonLib.parseObject(json, type); }
+    @Override
+    public <T> List<T> fromJsonList(String json, Class<T> classOfT) { return CompanyJsonLib.parseArray(json, classOfT); }
+    @Override
+    public Map<String, Object> fromJsonMap(String json) { return CompanyJsonLib.parseMap(json); }
+}
+
+// ② 注册一行（启动时统一注册，幂等）
+JsonAdapterRegistry.getInstance().register("company", new CompanyJsonAdapter());
+
+// ③ 与官方适配器一样使用
+JsonAdapter adapter = JsonAdapterRegistry.getInstance().get("company");
+String json = adapter.toJson(user);
+```
+
+> 接入的好处：公司旧代码不用改，还能和 gson / fastjson / jackson 通过模板名自由切换，
+> 业务侧统一走 `JsonAdapter` 门面，零感知底层差异。
+
 ## 性能评测（实测）
 
 数据集 1000 条记录，预热 2000 次 + 测量 20000 次（本机 JDK 21）：
