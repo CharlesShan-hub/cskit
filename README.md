@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README_zh.md)
 
+[![CI](https://github.com/CharlesShan-hub/cskit/actions/workflows/ci.yml/badge.svg)](https://github.com/CharlesShan-hub/cskit/actions/workflows/ci.yml)
+
 > CSKit — CharlesShan's Java toolkit.
 > Python has [cslib](https://github.com/CharlesShan-hub/cslib), Java is cskit.
 > Design philosophy: **pluggable, dependency-isolated** — a unified facade, switchable underlying implementations.

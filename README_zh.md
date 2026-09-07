@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README_zh.md)
 
+[![CI](https://github.com/CharlesShan-hub/cskit/actions/workflows/ci.yml/badge.svg)](https://github.com/CharlesShan-hub/cskit/actions/workflows/ci.yml)
+
 > CSKit —— CharlesShan 的 Java 工具库。
 > Python 有 [cslib](https://github.com/CharlesShan-hub/cslib)，Java 就是 cskit。
 > 设计理念：**可插拔、依赖隔离**——一套统一门面，底层实现按需切换。
