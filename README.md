@@ -8,7 +8,7 @@
 
 | 子框架 | 说明 | 详细文档 |
 |---|---|---|
-| **json** | 统一 JSON 门面：一套 API，任意底层库（Gson / Fastjson2），可插拔适配器 + `@JsonField` 注解 | [doc/json.md](doc/json.md) |
+| **json** | 统一 JSON 门面：一套 API，任意底层库（Gson / Fastjson2 / Jackson），可插拔适配器 + `@JsonField` 注解 | [doc/json.md](doc/json.md) |
 
 > 更多子框架（yaml / xml / http / ...）规划中，敬请期待 🌱
 
@@ -19,7 +19,8 @@ cskit/
 ├── pom.xml               ← 聚合工程
 ├── json-core/            ← 门面接口 + 注册表 + @JsonField（零第三方依赖）
 ├── json-gson/            ← Gson 适配器 + 注解翻译层
-└── json-fastjson/        ← Fastjson2 适配器
+├── json-fastjson/        ← Fastjson2 适配器
+└── json-jackson/         ← Jackson 适配器 + 注解翻译层
 ```
 
 **依赖隔离原则**：核心模块零第三方依赖；想用哪个底层库，只引对应的适配器模块，

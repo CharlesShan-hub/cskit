@@ -10,8 +10,8 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 | 库 | 优点 | 痛点 |
 |---|---|---|
 | Gson | 反射读字段、轻量、稳定 | 性能一般、注解能力弱 |
-| Fastjson2 | 性能极强（实测快 3~6 倍） | 字段可见性要求高、1.x 不兼容 JDK17+ |
-| Jackson | 功能全 | 配置繁琐、注解侵入 |
+| Fastjson2 | 性能极强（实测快 3~14 倍） | 字段可见性要求高、1.x 不兼容 JDK17+ |
+| Jackson | 功能全、生态大、性能好 | 配置繁琐、注解侵入 |
 
 **问题**：业务代码一旦直接依赖某个库，想换库就要改所有调用处，成本极高。
 
@@ -49,8 +49,9 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 | `json-core` | 门面接口、注册表、`@JsonField` 注解、字段解析器 | **零依赖** |
 | `json-gson` | Gson 适配器 + 注解翻译层 | gson |
 | `json-fastjson` | Fastjson2 适配器 | fastjson2 |
+| `json-jackson` | Jackson 适配器 + 注解翻译层 | jackson-databind |
 
-> **依赖隔离**：只想用 Gson 的项目只引 `json-core` + `json-gson`，fastjson2 不会进入 classpath。
+> **依赖隔离**：只想用 Gson 的项目只引 `json-core` + `json-gson`，其他库不会进入 classpath。
 
 ## 快速开始
 
@@ -121,10 +122,11 @@ registry.register("jackson", new JacksonJsonAdapter());
 
 | 实现 | 序列化 | 反序列化 | JSON 体积 |
 |---|---|---|---|
-| GsonJsonAdapter | ~120 μs | ~130 μs | 38,891 bytes |
-| FastJsonJsonAdapter | ~25 μs | ~35 μs | 38,891 bytes |
+| GsonJsonAdapter | ~288 μs | ~106 μs | 38,891 bytes |
+| FastJsonJsonAdapter | ~21 μs | ~28 μs | 38,891 bytes |
+| JacksonJsonAdapter | ~50 μs | ~99 μs | 38,891 bytes |
 
-> fastjson2 序列化快约 **4~6 倍**。评测代码见 `json-gson` 模块的 `JsonAdapterBenchmarkTest`。
+> fastjson2 序列化最快（相对 gson 快 ~14 倍）；Jackson 排第二。评测代码见 `json-jackson` 模块的 `JsonAdapterBenchmarkTest`。
 
 ## 设计亮点
 

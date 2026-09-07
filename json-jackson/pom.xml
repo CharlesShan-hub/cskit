@@ -10,10 +10,10 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>json-gson</artifactId>
+    <artifactId>json-jackson</artifactId>
     <packaging>jar</packaging>
-    <name>cskit-json-gson</name>
-    <description>Gson 适配器：想用 Gson 只需引入本模块</description>
+    <name>cskit-json-jackson</name>
+    <description>Jackson 适配器：想用 Jackson 只需引入本模块（按需加载，不污染其他项目）</description>
 
     <dependencies>
         <dependency>
@@ -21,10 +21,15 @@
             <artifactId>json-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
-        <!-- 测试：JsonAdapterDemoTest 需 fastjson 适配器做模板切换演示 -->
+        <!-- 测试：三库横向对比需要 gson + fastjson 适配器 -->
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-gson</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>top.cskit</groupId>
             <artifactId>json-fastjson</artifactId>

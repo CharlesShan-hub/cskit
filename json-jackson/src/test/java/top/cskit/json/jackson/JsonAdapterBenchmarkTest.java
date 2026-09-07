@@ -1,10 +1,11 @@
-package top.cskit.json.gson;
+package top.cskit.json.jackson;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.cskit.json.JsonAdapter;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.jackson.JacksonJsonAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * 多 JSON 框架评测套件：正确性对比 + 性能基准（简易 benchmark）
  * <p>
- * 评测对象：gson / fastjson2（通过统一 {@link JsonAdapter} 门面）
+ * 评测对象：gson / fastjson2 / jackson（通过统一 {@link JsonAdapter} 门面）
  * 评测维度：
  * 1. 正确性：序列化/反序列化结果一致性
  * 2. 性能：序列化耗时、反序列化耗时（含预热，降低 JIT 影响）
@@ -26,7 +27,8 @@ class JsonAdapterBenchmarkTest {
     /** 评测对象注册 */
     static final List<JsonAdapter> ADAPTERS = List.of(
             new GsonJsonAdapter(),
-            new FastJsonJsonAdapter()
+            new FastJsonJsonAdapter(),
+            new JacksonJsonAdapter()
     );
 
     /** 评测数据集：动物园居民列表（真实业务形态：List<Bean>） */
