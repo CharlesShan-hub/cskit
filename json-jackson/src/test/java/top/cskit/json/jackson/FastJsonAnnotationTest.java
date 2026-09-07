@@ -13,53 +13,53 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fastjson 注解翻译层测试：{@code @JsonField} 在 fastjson2 底层生效，
- * 且与 Gson / Jackson 结果一致（一套注解，三库统一）。
- * 实体复用 {@link Employee}（共享测试实体，三库共用同一个类证明注解统一）。
+ * Tests for the Fastjson annotation translation layer: {@code @JsonField}
+ * takes effect on fastjson2, consistent with Gson / Jackson (one annotation
+ * set, three backends). Entity reused from {@link Employee}.
  */
 class FastJsonAnnotationTest {
 
     static final JsonAdapter FASTJSON = new FastJsonJsonAdapter();
 
     @Test
-    @DisplayName("字段重命名：@JsonField(\"ename\") 双向翻译")
+    @DisplayName("Field rename: @JsonField(\"ename\") translated in both directions")
     void fieldRename() {
         String json = FASTJSON.toJson(new Employee("Jack", 10000.5));
-        System.out.println("序列化: " + json);
-        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON 应使用注解名 ename");
-        assertFalse(json.contains("\"name\""), "不应输出 Java 字段名 name");
+        System.out.println("serialized: " + json);
+        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON should use the annotation name ename");
+        assertFalse(json.contains("\"name\""), "Java field name should not be output");
 
         Employee back = FASTJSON.fromJson("{\"ename\":\"Tom\",\"salary\":8000.5}", Employee.class);
-        System.out.println("反序列化: name=" + back.getName() + ", salary=" + back.getSalary());
+        System.out.println("deserialized: name=" + back.getName() + ", salary=" + back.getSalary());
         assertEquals("Tom", back.getName());
         assertEquals(8000.5, back.getSalary(), 0.001);
     }
 
     @Test
-    @DisplayName("序列化开关：serialize=false 不输出但可接收")
+    @DisplayName("Serialize switch: serialize=false not output but still read")
     void serializeOff() {
         Employee e = new Employee("Jack", 10000.5);
         e.setCost(8000.0);
 
         String json = FASTJSON.toJson(e);
-        System.out.println("序列化: " + json);
-        assertFalse(json.contains("cost"), "serialize=false 字段不应输出");
+        System.out.println("serialized: " + json);
+        assertFalse(json.contains("cost"), "serialize=false field must not be output");
 
         Employee back = FASTJSON.fromJson("{\"ename\":\"Jack\",\"salary\":10000.5,\"cost\":8000.0}", Employee.class);
-        assertEquals(8000.0, back.getCost(), 0.001, "外部传入 cost 应被接收");
+        assertEquals(8000.0, back.getCost(), 0.001, "external cost should be accepted");
     }
 
     @Test
-    @DisplayName("反序列化开关：deserialize=false 拒绝外部写入")
+    @DisplayName("Deserialize switch: deserialize=false rejects external writes")
     void deserializeOff() {
         String fromAccountant = "{\"ename\":\"Boss\",\"salary\":100000.0,\"profit\":99999.0}";
         Employee boss = FASTJSON.fromJson(fromAccountant, Employee.class);
-        System.out.println("反序列化后 profit（应忽略外部值）: " + boss.getProfit());
-        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false 应拒绝外部写入");
+        System.out.println("profit after deserialize (external value ignored): " + boss.getProfit());
+        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false must reject external writes");
     }
 
     @Test
-    @DisplayName("三库注解一致性：同一 @JsonField 在 gson / fastjson / jackson 行为一致")
+    @DisplayName("Cross-library consistency: same @JsonField behaves identically on gson/fastjson/jackson")
     void crossLibraryAnnotationConsistency() {
         JsonAdapter gson = new GsonJsonAdapter();
         JsonAdapter jackson = new JacksonJsonAdapter();
@@ -74,11 +74,11 @@ class FastJsonAnnotationTest {
                     + ", salary=" + e.getSalary()
                     + ", cost=" + e.getCost()
                     + ", profit=" + e.getProfit());
-            assertEquals("Tom", e.getName(), name + " 应读取 ename");
-            assertEquals(8000.5, e.getSalary(), 0.001, name + " salary 一致");
-            assertEquals(999.0, e.getCost(), 0.001, name + " cost 应被接收");
-            assertEquals(0.0, e.getProfit(), 0.001, name + " profit 应拒绝外部值");
+            assertEquals("Tom", e.getName(), name + " should read ename");
+            assertEquals(8000.5, e.getSalary(), 0.001, name + " salary consistent");
+            assertEquals(999.0, e.getCost(), 0.001, name + " cost should be accepted");
+            assertEquals(0.0, e.getProfit(), 0.001, name + " profit should reject external value");
         }
-        System.out.println("✅ 一套 @JsonField，gson / fastjson / jackson 三库行为完全一致");
+        System.out.println("one @JsonField, three backends (gson/fastjson/jackson) fully consistent");
     }
 }

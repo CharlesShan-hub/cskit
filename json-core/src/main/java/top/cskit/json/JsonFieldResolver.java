@@ -5,30 +5,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * {@link JsonField} 注解解析器：反射扫描类的字段，生成字段映射规则。
- * <p>
- * 这是框架注解翻译层的核心：只依赖 JDK 反射，不绑定任何底层 JSON 库，
- * 各适配器（Gson / Fastjson）拿到规则后各自翻译为自己的实现。
+ * Resolver for {@link JsonField}: scans a class's fields with reflection and
+ * builds field-mapping rules.
+ *
+ * <p>This is the core of the annotation translation layer. It depends only on
+ * JDK reflection, never on any JSON library; each adapter translates the
+ * resulting rules into its own mechanism.
  */
 public final class JsonFieldResolver {
 
     private JsonFieldResolver() {
     }
 
-    /** 字段映射规则：Java 字段名 -> JSON 字段名 */
+    /** Field-mapping rule: Java field name -> JSON field name. */
     public static final class FieldRule {
-        /** Java 字段名 */
+        /** Java field name. */
         public final String javaName;
-        /** JSON 字段名（未注解或未指定时 = javaName） */
+        /** JSON field name (falls back to javaName if not annotated). */
         public final String jsonName;
-        /** 是否参与序列化 */
+        /** Whether the field is serialized. */
         public final boolean serialize;
-        /** 是否参与反序列化 */
+        /** Whether the field is deserialized. */
         public final boolean deserialize;
 
         FieldRule(Field field, JsonField annotation) {
             this.javaName = field.getName();
-            // 取值优先级：value() 简写 > name() 显式 > Java 字段原名
+            // Priority: value() shorthand > name() explicit > Java field name
             String jsonName = (annotation != null && !annotation.value().isEmpty())
                     ? annotation.value()
                     : (annotation != null && !annotation.name().isEmpty())
@@ -41,16 +43,16 @@ public final class JsonFieldResolver {
     }
 
     /**
-     * 解析类所有字段（含继承字段）的映射规则
+     * Resolves mapping rules for all fields, including inherited ones.
      *
-     * @param clazz 目标类型
-     * @return javaName -> rule 的有序映射
+     * @param clazz target type
+     * @return ordered map of javaName -> rule
      */
     public static Map<String, FieldRule> resolve(Class<?> clazz) {
         Map<String, FieldRule> rules = new HashMap<>();
         for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
-                // 跳过 static / transient / synthetic 字段
+                // Skip static / transient / synthetic fields
                 if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
                         || java.lang.reflect.Modifier.isTransient(field.getModifiers())
                         || field.isSynthetic()) {

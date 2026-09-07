@@ -12,14 +12,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Gson 适配器：内部直接使用 Gson（不走 YshJson，展示适配器如何封装任意底层库）。
- * <p>
- * 复用 Gson 线程安全特性，单例持有，避免重复构建。
- * 已注册 {@link JsonFieldAdapterFactory}，使框架统一注解 {@code @JsonField} 在 Gson 底层生效。
- * <p>
- * 支持定制构造（对齐 YshJson 的 GsonInitOperation 设计）：
+ * Gson adapter: wraps Gson directly (shows how any backend is adapted).
+ *
+ * <p>Gson is thread-safe, so a single instance is kept. Registers
+ * {@link JsonFieldAdapterFactory} so the framework's {@code @JsonField}
+ * annotation takes effect on the Gson backend.
+ *
+ * <p>Customizable construction:
  * <pre>
- * // 定制日期格式 + 保留 null 的适配器
  * JsonAdapter adapter = new GsonJsonAdapter(builder -&gt;
  *         builder.setDateFormat("yyyy-MM-dd HH:mm:ss").serializeNulls());
  * </pre>
@@ -28,16 +28,17 @@ public class GsonJsonAdapter implements JsonAdapter {
 
     private final Gson gson;
 
-    /** 默认构造：仅注册框架注解翻译层 */
+    /** Default constructor: only registers the annotation translation layer. */
     public GsonJsonAdapter() {
         this(builder -> {
         });
     }
 
     /**
-     * 定制构造：在框架注解翻译层基础上，追加 GsonBuilder 定制
+     * Custom constructor: applies extra GsonBuilder customization on top of
+     * the annotation translation layer.
      *
-     * @param customizer 定制函数（可配置日期格式、null 策略等）
+     * @param customizer e.g. date format, null strategy
      */
     public GsonJsonAdapter(Consumer<GsonBuilder> customizer) {
         GsonBuilder builder = new GsonBuilder()

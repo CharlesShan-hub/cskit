@@ -9,16 +9,18 @@ import top.cskit.json.JsonField;
 import java.lang.reflect.Field;
 
 /**
- * 框架注解翻译层（Jackson 实现）：
- * 通过扩展 {@link JacksonAnnotationIntrospector}，让框架统一注解 {@code @JsonField}
- * 在 Jackson 底层生效——字段重命名、序列化/反序列化开关。
- * <p>
- * 与 Gson 版（手写 TypeAdapter）不同，Jackson 原生支持注解内省扩展，实现更轻量。
+ * Annotation translation layer for Jackson: extends
+ * {@link JacksonAnnotationIntrospector} so the framework's {@code @JsonField}
+ * takes effect on the Jackson backend — field renaming and
+ * serialize/deserialize switches.
+ *
+ * <p>Unlike the Gson version (hand-written TypeAdapter), Jackson natively
+ * supports annotation introspection, so this implementation is lighter.
  *
  * <pre>
- * {@literal @}JsonField("ename")            → 序列化/反序列化都用 ename 作为 JSON 字段名
- * {@literal @}JsonField(serialize=false)    → 序列化时忽略（serializeMapper 生效）
- * {@literal @}JsonField(deserialize=false)  → 反序列化时忽略（deserializeMapper 生效）
+ * {@literal @}JsonField("ename")            -> both directions use "ename"
+ * {@literal @}JsonField(serialize=false)    -> skipped when serializing
+ * {@literal @}JsonField(deserialize=false)  -> skipped when deserializing
  * </pre>
  */
 public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospector {
@@ -26,14 +28,15 @@ public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospect
     private final boolean forSerialization;
 
     /**
-     * @param forSerialization true = 用于序列化方向（忽略 serialize=false）；
-     *                         false = 用于反序列化方向（忽略 deserialize=false）
+     * @param forSerialization true for the serialization mapper (skip
+     *                         serialize=false); false for deserialization
+     *                         (skip deserialize=false)
      */
     public JsonFieldAnnotationIntrospector(boolean forSerialization) {
         this.forSerialization = forSerialization;
     }
 
-    /** 序列化时取字段的 JSON 名（@JsonField 优先，否则默认） */
+    /** Returns the JSON name on serialization (@JsonField first, else default). */
     @Override
     public PropertyName findNameForSerialization(Annotated a) {
         JsonField ann = findAnnotation(a);
@@ -46,7 +49,7 @@ public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospect
         return super.findNameForSerialization(a);
     }
 
-    /** 反序列化时取字段的 JSON 名（@JsonField 优先，否则默认） */
+    /** Returns the JSON name on deserialization (@JsonField first, else default). */
     @Override
     public PropertyName findNameForDeserialization(Annotated a) {
         JsonField ann = findAnnotation(a);
@@ -59,7 +62,7 @@ public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospect
         return super.findNameForDeserialization(a);
     }
 
-    /** 按方向忽略：序列化看 serialize，反序列化看 deserialize */
+    /** Ignores fields by direction: serialize flag for writing, deserialize for reading. */
     @Override
     public boolean hasIgnoreMarker(AnnotatedMember m) {
         JsonField ann = findAnnotation(m);
@@ -74,7 +77,7 @@ public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospect
         return super.hasIgnoreMarker(m);
     }
 
-    // ---- 辅助 ----
+    // ---- Helpers ----
 
     private JsonField findAnnotation(Annotated annotated) {
         if (annotated instanceof AnnotatedMember) {
@@ -86,7 +89,7 @@ public class JsonFieldAnnotationIntrospector extends JacksonAnnotationIntrospect
         return annotated.getAnnotation(JsonField.class);
     }
 
-    /** 取值优先级：value() 简写 > name() 显式 > 空（用默认名） */
+    /** Priority: value() shorthand > name() explicit > empty (use default). */
     private String effectiveName(JsonField ann) {
         if (!ann.value().isEmpty()) {
             return ann.value();

@@ -1,10 +1,11 @@
 package top.cskit.json.testkit;
 
 /**
- * 共享测试实体：动物（动物园居民）。
- * <p>
- * 三库通用要求：public 无参构造 + getter/setter（fastjson2 依赖 getter/setter，
- * Gson 反射读字段）。供各适配器模块测试复用，避免重复定义。
+ * Shared test entity: an animal.
+ *
+ * <p>Requirements common to all three backends: public no-arg constructor
+ * plus getters/setters (fastjson2 relies on them; Gson reads fields via
+ * reflection). Reused by every adapter module's tests to avoid duplication.
  */
 public class Animal {
 

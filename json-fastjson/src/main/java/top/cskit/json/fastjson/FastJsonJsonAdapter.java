@@ -11,14 +11,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Fastjson 适配器：内部使用阿里 Fastjson2（fastjson 1.x 已停维护，不支持 JDK17+）。
- * <p>
- * 已接入 {@link JsonFieldFastJsonCodec} 注解翻译层：
- * 标注了框架注解 {@code @JsonField} 的类走自定义流式编解码（重命名/开关生效），
- * 未标注的类走 fastjson2 原生 API（性能无损）。
- * <p>
- * 与 Gson / Jackson 适配器实现同一接口——这就是适配器模式的核心：
- * 底层库升级/替换时，只需改本适配器内部实现，上层业务代码无感知。
+ * Fastjson adapter backed by Alibaba Fastjson2 (fastjson 1.x is no longer
+ * maintained and does not support JDK 17+).
+ *
+ * <p>Integrates {@link JsonFieldFastJsonCodec}: classes annotated with
+ * {@code @JsonField} go through custom streaming codec (rename/switches take
+ * effect); unannotated classes use fastjson2's native API (no performance
+ * loss).
+ *
+ * <p>Like the Gson/Jackson adapters, it implements the same {@link JsonAdapter}
+ * interface; swapping or upgrading a backend only changes this class, business
+ * code stays untouched.
  */
 public class FastJsonJsonAdapter implements JsonAdapter {
 

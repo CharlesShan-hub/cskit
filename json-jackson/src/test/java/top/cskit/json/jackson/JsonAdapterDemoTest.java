@@ -17,35 +17,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 宝宝自研 JSON 框架的适配器模式演示
- * <p>
- * 核心思想：业务代码只面向 {@link JsonAdapter} 接口，
- * 底层实现通过注册表 + 模板名切换（gson / fastjson），换库零改动。
- * 实体复用 {@link Animal}（共享测试实体）。
+ * Adapter-pattern demo of the JSON framework.
+ *
+ * <p>Core idea: business code only sees the {@link JsonAdapter} interface;
+ * the backend is chosen via registry + template name (gson / fastjson),
+ * so swapping a backend requires zero code change. Entity reused from
+ * {@link Animal}.
  */
 class JsonAdapterDemoTest {
 
-    /** 注册表（全局单例）：预注册 gson 和 fastjson 两个模板 */
+    /** Global registry: pre-register gson and fastjson templates. */
     static final JsonAdapterRegistry REGISTRY = JsonAdapterRegistry.getInstance()
             .register("gson", new GsonJsonAdapter())
             .register("fastjson", new FastJsonJsonAdapter());
 
-    // region 核心演示：同一业务代码，两个底层库
+    // region Core demo: same business code, two backends
 
     @Test
-    @DisplayName("模板切换：同一段业务代码，gson / fastjson 都能跑")
+    @DisplayName("Template switch: same code runs on gson and fastjson")
     void templateSwitch() {
         Animal tom = new Animal("Tom", 1938);
 
         for (String template : new String[]{"gson", "fastjson"}) {
-            JsonAdapter adapter = REGISTRY.get(template); // ← 模板选择就在这一行！
+            JsonAdapter adapter = REGISTRY.get(template); // <- template chosen on this line
 
-            // 序列化
+            // Serialize
             String json = adapter.toJson(tom);
             System.out.println("[" + template + "] toJson: " + json);
-            assertTrue(json.contains("\"name\":\"Tom\""), template + " 序列化结果应有 name");
+            assertTrue(json.contains("\"name\":\"Tom\""), template + " serialized result should contain name");
 
-            // 反序列化
+            // Deserialize
             Animal back = adapter.fromJson(json, Animal.class);
             System.out.println("[" + template + "] fromJson: " + back.getName() + " / " + back.getBirthYear());
             assertEquals("Tom", back.getName());
@@ -54,7 +55,7 @@ class JsonAdapterDemoTest {
     }
 
     @Test
-    @DisplayName("泛型 & 集合：两个库的 List / Map 都支持")
+    @DisplayName("Generics and collections: List / Map on both backends")
     void genericCollection() {
         String listJson = "[{\"name\":\"Tom\",\"birthYear\":1938},{\"name\":\"Jerry\",\"birthYear\":1940}]";
         String mapJson = "{\"cat\":{\"name\":\"Tom\",\"birthYear\":1938}}";
@@ -74,23 +75,23 @@ class JsonAdapterDemoTest {
 
     // endregion
 
-    // region 框架健壮性
+    // region Framework robustness
 
     @Test
-    @DisplayName("未注册的模板名会报错（fail-fast）")
+    @DisplayName("Unknown template name throws (fail-fast)")
     void unknownTemplate() {
         assertThrows(IllegalArgumentException.class, () -> REGISTRY.get("jackson"));
     }
 
     @Test
-    @DisplayName("注册表是全局单例：getInstance 永远返回同一实例")
+    @DisplayName("Registry is a global singleton: getInstance always returns the same instance")
     void singleton() {
         JsonAdapterRegistry a = JsonAdapterRegistry.getInstance();
         JsonAdapterRegistry b = JsonAdapterRegistry.getInstance();
-        System.out.println("两次 getInstance 是否同一实例: " + (a == b));
-        assertEquals(a, b, "单例注册表应返回同一实例");
+        System.out.println("same instance from two getInstance calls: " + (a == b));
+        assertEquals(a, b, "singleton registry should return the same instance");
 
-        // 单例的好处：别处注册的模板，这里立即可见
+        // Singleton benefit: templates registered elsewhere are visible here
         assertTrue(a.contains("gson"));
         assertTrue(a.contains("fastjson"));
     }

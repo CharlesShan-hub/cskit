@@ -3,9 +3,9 @@ package top.cskit.json.testkit;
 import java.util.Date;
 
 /**
- * 共享测试实体：游客（演示日期格式化定制）。
- * <p>
- * 供 Gson 定制构造测试（日期格式）等场景复用。
+ * Shared test entity: a tourist, demonstrating date-format customization.
+ *
+ * <p>Reused by scenarios such as the Gson custom-constructor test (date format).
  */
 public class Tourist {
 

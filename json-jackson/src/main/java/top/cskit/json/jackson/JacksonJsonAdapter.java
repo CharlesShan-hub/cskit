@@ -10,20 +10,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Jackson 适配器：内部使用 jackson-databind。
- * <p>
- * 已接入 {@link JsonFieldAnnotationIntrospector}，使框架统一注解 {@code @JsonField} 生效：
+ * Jackson adapter backed by jackson-databind.
+ *
+ * <p>Integrates {@link JsonFieldAnnotationIntrospector} so the framework's
+ * {@code @JsonField} annotation takes effect:
  * <ul>
- *   <li>序列化使用 serializeMapper（忽略 serialize=false 字段，应用字段重命名）</li>
- *   <li>反序列化使用 deserializeMapper（忽略 deserialize=false 字段，应用字段重命名）</li>
+ *   <li>serializeMapper handles serialization (skips serialize=false, applies rename)</li>
+ *   <li>deserializeMapper handles deserialization (skips deserialize=false, applies rename)</li>
  * </ul>
- * ObjectMapper 配置完成后线程安全，适配器可单例复用。
+ * ObjectMapper is thread-safe once configured, so the adapter is a reusable singleton.
  */
 public class JacksonJsonAdapter implements JsonAdapter {
 
-    /** 序列化专用 mapper：识别 @JsonField 的序列化规则 */
+    /** Serialization mapper: honors @JsonField serialization rules. */
     private final ObjectMapper serializeMapper;
-    /** 反序列化专用 mapper：识别 @JsonField 的反序列化规则 */
+    /** Deserialization mapper: honors @JsonField deserialization rules. */
     private final ObjectMapper deserializeMapper;
 
     public JacksonJsonAdapter() {
@@ -38,7 +39,7 @@ public class JacksonJsonAdapter implements JsonAdapter {
         try {
             return serializeMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            throw new IllegalStateException("Jackson 序列化失败", e);
+            throw new IllegalStateException("Jackson serialization failed", e);
         }
     }
 
@@ -47,7 +48,7 @@ public class JacksonJsonAdapter implements JsonAdapter {
         try {
             return deserializeMapper.readValue(json, classOfT);
         } catch (Exception e) {
-            throw new IllegalStateException("Jackson 反序列化失败", e);
+            throw new IllegalStateException("Jackson deserialization failed", e);
         }
     }
 
@@ -56,7 +57,7 @@ public class JacksonJsonAdapter implements JsonAdapter {
         try {
             return deserializeMapper.readValue(json, deserializeMapper.getTypeFactory().constructType(type));
         } catch (Exception e) {
-            throw new IllegalStateException("Jackson 反序列化失败", e);
+            throw new IllegalStateException("Jackson deserialization failed", e);
         }
     }
 
@@ -67,7 +68,7 @@ public class JacksonJsonAdapter implements JsonAdapter {
                     .constructCollectionType(List.class, classOfT);
             return deserializeMapper.readValue(json, type);
         } catch (Exception e) {
-            throw new IllegalStateException("Jackson 反序列化 List 失败", e);
+            throw new IllegalStateException("Jackson deserialization failed for List", e);
         }
     }
 
@@ -78,7 +79,7 @@ public class JacksonJsonAdapter implements JsonAdapter {
                     .constructMapType(Map.class, String.class, Object.class);
             return deserializeMapper.readValue(json, type);
         } catch (Exception e) {
-            throw new IllegalStateException("Jackson 反序列化 Map 失败", e);
+            throw new IllegalStateException("Jackson deserialization failed for Map", e);
         }
     }
 }

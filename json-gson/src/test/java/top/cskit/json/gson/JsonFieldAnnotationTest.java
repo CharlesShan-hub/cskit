@@ -11,67 +11,69 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 框架统一注解 @JsonField 支持测试（Gson 翻译层）
- * <p>
- * 验证能力（实体复用 {@link Employee}，与 fastjson/jackson 注解测试共享）：
- * 1. 字段重命名：{@code @JsonField("ename")} → JSON 输出 ename
- * 2. 序列化开关：{@code @JsonField(serialize=false)} → 不输出
- * 3. 反序列化开关：{@code @JsonField(deserialize=false)} → 不接收
- * 4. 双向往返：rename 字段可逆
+ * Tests for the framework {@code @JsonField} annotation on the Gson
+ * translation layer. Reuses {@link Employee} (shared with the fastjson /
+ * jackson annotation tests):
+ * <ol>
+ *   <li>Field rename: {@code @JsonField("ename")} -> JSON outputs "ename"</li>
+ *   <li>Serialize switch: {@code @JsonField(serialize=false)} -> not output</li>
+ *   <li>Deserialize switch: {@code @JsonField(deserialize=false)} -> not read</li>
+ *   <li>Round trip: renamed field survives serialize -> deserialize</li>
+ * </ol>
  */
 class JsonFieldAnnotationTest {
 
     static final JsonAdapter GSON = new GsonJsonAdapter();
 
     @Test
-    @DisplayName("字段重命名：@JsonField(\"ename\") 序列化/反序列化都用 ename")
+    @DisplayName("Field rename: @JsonField(\"ename\") used for both serialize and deserialize")
     void fieldRename() {
         String json = GSON.toJson(new Employee("Jack", 10000.5));
-        System.out.println("序列化: " + json);
+        System.out.println("serialized: " + json);
 
-        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON 应使用注解名 ename");
-        assertFalse(json.contains("\"name\""), "不应输出 Java 字段名 name");
+        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON should use the annotation name ename");
+        assertFalse(json.contains("\"name\""), "Java field name should not be output");
 
-        // 反序列化：ename → name
+        // Deserialize: ename -> name
         Employee back = GSON.fromJson("{\"ename\":\"Tom\",\"salary\":8000.5}", Employee.class);
-        System.out.println("反序列化: name=" + back.getName() + ", salary=" + back.getSalary());
+        System.out.println("deserialized: name=" + back.getName() + ", salary=" + back.getSalary());
         assertEquals("Tom", back.getName());
         assertEquals(8000.5, back.getSalary(), 0.001);
     }
 
     @Test
-    @DisplayName("序列化开关：@JsonField(serialize=false) 不输出，但可接收")
+    @DisplayName("Serialize switch: @JsonField(serialize=false) not output, but still read")
     void serializeOff() {
         Employee e = new Employee("Jack", 10000.5);
-        e.setCost(8000.0); // 会计填的成本，不应发出去
+        e.setCost(8000.0); // accountant-filled cost must not be sent out
 
         String json = GSON.toJson(e);
-        System.out.println("序列化: " + json);
-        assertFalse(json.contains("cost"), "serialize=false 字段不应输出");
-        assertTrue(json.contains("\"ename\""), "普通字段正常输出");
+        System.out.println("serialized: " + json);
+        assertFalse(json.contains("cost"), "serialize=false field must not be output");
+        assertTrue(json.contains("\"ename\""), "ordinary fields still output");
 
-        // 会计发回时 cost 在 JSON 里，应该被接收
+        // cost present in JSON should be accepted back
         Employee back = GSON.fromJson("{\"ename\":\"Jack\",\"salary\":10000.5,\"cost\":8000.0}", Employee.class);
-        System.out.println("接收 cost=" + back.getCost());
+        System.out.println("received cost=" + back.getCost());
         assertEquals(8000.0, back.getCost(), 0.001);
     }
 
     @Test
-    @DisplayName("反序列化开关：@JsonField(deserialize=false) 可输出但拒绝接收")
+    @DisplayName("Deserialize switch: @JsonField(deserialize=false) output but not read")
     void deserializeOff() {
-        // 老板序列化时 profit 输出（虽然可能为 0，由 getter 计算）
+        // Boss serialization still outputs profit (possibly 0, computed by getter)
         String json = GSON.toJson(new Employee("Boss", 100000.0));
-        System.out.println("序列化: " + json);
+        System.out.println("serialized: " + json);
 
-        // 会计传回 profit 但老板不让外部写入（自己算）
+        // Accountant sends profit back, but boss does not accept external writes
         String fromAccountant = "{\"ename\":\"Boss\",\"salary\":100000.0,\"profit\":99999.0}";
         Employee boss = GSON.fromJson(fromAccountant, Employee.class);
-        System.out.println("反序列化后 profit（应忽略外部值）: " + boss.getProfit());
-        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false 应拒绝外部写入");
+        System.out.println("profit after deserialize (external value ignored): " + boss.getProfit());
+        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false must reject external writes");
     }
 
     @Test
-    @DisplayName("往返：rename 字段序列化后反序列化不丢数据")
+    @DisplayName("Round trip: renamed field survives serialize -> deserialize without data loss")
     void roundTrip() {
         Employee e = new Employee("Jerry", 9000.5);
         String json = GSON.toJson(e);

@@ -3,14 +3,15 @@ package top.cskit.json.testkit;
 import top.cskit.json.JsonField;
 
 /**
- * 共享测试实体：员工（演示 {@code @JsonField} 注解）。
- * <p>
- * 注解翻译层测试统一使用本实体，验证三库（gson / fastjson / jackson）
- * 对同一套 {@code @JsonField} 注解行为一致：
+ * Shared test entity: an employee, demonstrating {@code @JsonField}.
+ *
+ * <p>Used by the annotation translation layer tests to verify all three
+ * backends (gson / fastjson / jackson) behave identically on the same
+ * annotation set:
  * <ul>
- *   <li>{@code ename}：字段重命名（JSON 用 ename）</li>
- *   <li>{@code cost}：只读不写（serialize=false）</li>
- *   <li>{@code profit}：只写不读（deserialize=false）</li>
+ *   <li>{@code ename}: renamed JSON field</li>
+ *   <li>{@code cost}: deserialize only (serialize=false)</li>
+ *   <li>{@code profit}: serialize only (deserialize=false)</li>
  * </ul>
  */
 public class Employee {

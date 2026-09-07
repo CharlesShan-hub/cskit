@@ -5,70 +5,62 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * JSON 适配器注册表（单例）：按模板名注册/选择底层实现。
- * <p>
- * 注册表本质是<b>全局注册中心</b>（类比 Spring 容器 / JDBC DriverManager），
- * 因此设计为全局唯一实例——缓存 JSON 构造器的表只有一张，避免各处
- * new 出多个注册表各注册各的，导致缓存失去意义。
- * <p>
- * 三种使用模式：
+ * Global registry of JSON adapters, keyed by template name.
+ *
+ * <p>Singleton by design (like Spring container / JDBC DriverManager): one
+ * registry, one map, so caches stay meaningful. Usage modes:
  * <ul>
- *   <li><b>长期复用</b>：{@link #register} + {@link #get}（如 gson / fastjson 常用适配器）</li>
- *   <li><b>一次性使用</b>：{@link #useOnce}（取出即删）或 {@link #use}（作用域封闭）——
- *       临时模板用完即弃，不污染全局（对齐 YshJson 定制路径"用完即弃"思想）</li>
- *   <li><b>即用即弃</b>：不注册，直接 new 适配器用完就扔（{@link JsonKit} 提供静态便捷入口）</li>
+ *   <li><b>Long-lived</b>: {@link #register} + {@link #get} (e.g. shared gson/fastjson adapters)</li>
+ *   <li><b>One-shot</b>: {@link #useOnce} (take and remove) or {@link #use} (scoped, auto-remove)</li>
+ *   <li><b>Ephemeral</b>: skip registration, new an adapter and drop it ({@link JsonKit})</li>
  * </ul>
- * 用法：
+ * Example:
  * <pre>
- * // 长期：注册 + 取用
- * JsonAdapterRegistry.getInstance()
- *         .register("gson", new GsonJsonAdapter());
+ * // Long-lived: register + get
+ * JsonAdapterRegistry.getInstance().register("gson", new GsonJsonAdapter());
  * JsonAdapter gson = JsonAdapterRegistry.getInstance().get("gson");
  *
- * // 一次性：取出即删
+ * // One-shot: take and remove
  * JsonAdapterRegistry.getInstance().register("tmp", new GsonJsonAdapter());
  * JsonAdapter tmp = JsonAdapterRegistry.getInstance().useOnce("tmp");
  *
- * // 一次性：作用域封闭（执行完自动移除）
+ * // One-shot: scoped (auto-removed after the lambda)
  * String json = JsonAdapterRegistry.getInstance()
  *         .use("tmp", adapter -> adapter.toJson(obj));
  * </pre>
- * 新增底层库（Jackson 等）只需实现 {@link JsonAdapter} 并注册，业务代码零改动。
- * <p>
- * <b>线程安全</b>（单例全局共享，必须并发安全）：
+ * Adding a new backend (e.g. Jackson) only requires implementing {@link JsonAdapter}
+ * and registering it; business code stays untouched.
+ *
+ * <p>Thread-safe (globally shared singleton):
  * <ul>
- *   <li>饿汉式单例：类加载时创建，JVM 保证只初始化一次；</li>
- *   <li>内部 {@link ConcurrentHashMap}：register / get / contains / useOnce / use 均为原子操作；</li>
- *   <li>并发注册同名模板为"后写覆盖"；并发 useOnce 同名模板只有一个能取到。</li>
+ *   <li>Eager singleton: created at class load, initialized once by the JVM;</li>
+ *   <li>{@link ConcurrentHashMap}: register/get/contains/useOnce/use are atomic;</li>
+ *   <li>Same-name concurrent registration: last write wins; concurrent useOnce: only one wins.</li>
  * </ul>
- * 并发安全性已由 {@code JsonAdapterRegistryConcurrencyTest} 压力验证。
+ * Concurrency verified by {@code JsonAdapterRegistryConcurrencyTest}.
  */
 public final class JsonAdapterRegistry {
 
-    /** 全局唯一实例（饿汉式，类加载即创建，线程安全） */
+    /** Eager singleton instance. */
     private static final JsonAdapterRegistry INSTANCE = new JsonAdapterRegistry();
 
     private final Map<String, JsonAdapter> registry = new ConcurrentHashMap<>();
 
-    /** 私有构造器：禁止外部 new（单例） */
+    /** Private constructor: singleton only. */
     private JsonAdapterRegistry() {
     }
 
-    /**
-     * 获取全局唯一注册表实例
-     *
-     * @return 单例
-     */
+    /** Returns the global singleton instance. */
     public static JsonAdapterRegistry getInstance() {
         return INSTANCE;
     }
 
     /**
-     * 注册适配器，链式
+     * Registers an adapter under a template name (chainable).
      *
-     * @param name    模板名（如 "gson"、"fastjson"）
-     * @param adapter 适配器实现
-     * @return this（链式调用）
+     * @param name    template name, e.g. "gson", "fastjson"
+     * @param adapter adapter implementation
+     * @return this, for chaining
      */
     public JsonAdapterRegistry register(String name, JsonAdapter adapter) {
         registry.put(name, adapter);
@@ -76,55 +68,49 @@ public final class JsonAdapterRegistry {
     }
 
     /**
-     * 按模板名取适配器，未注册抛异常（fail-fast 防手滑）
+     * Gets an adapter by template name; throws if not registered (fail-fast).
      *
-     * @param name 模板名
-     * @return 适配器
+     * @param name template name
+     * @return the adapter
      */
     public JsonAdapter get(String name) {
         JsonAdapter adapter = registry.get(name);
         if (adapter == null) {
-            throw new IllegalArgumentException("未注册的 JSON 适配器: " + name);
+            throw new IllegalArgumentException("Unregistered JSON adapter: " + name);
         }
         return adapter;
     }
 
-    /**
-     * 是否存在
-     *
-     * @param name 模板名
-     * @return true 表示已注册
-     */
+    /** Returns whether a template name is registered. */
     public boolean contains(String name) {
         return registry.containsKey(name);
     }
 
     /**
-     * 一次性取用：取出即从注册表移除（用完即弃，不污染全局）。
-     * <p>
-     * 对齐 YshJson 定制路径"每次 new、用完即弃"的思想——临时模板用一次就该消失。
-     * 并发下同名模板只有一个线程能取到（remove 原子操作）。
+     * Takes an adapter once: removes it from the registry and returns it.
+     * A temporary template should disappear after one use; concurrent
+     * callers on the same name race on the atomic remove, only one wins.
      *
-     * @param name 模板名
-     * @return 适配器（已从注册表移除）
+     * @param name template name
+     * @return the adapter (already removed from the registry)
      */
     public JsonAdapter useOnce(String name) {
         JsonAdapter adapter = registry.remove(name);
         if (adapter == null) {
-            throw new IllegalArgumentException("未注册的 JSON 适配器: " + name);
+            throw new IllegalArgumentException("Unregistered JSON adapter: " + name);
         }
         return adapter;
     }
 
     /**
-     * 一次性使用（作用域封闭）：取出适配器执行 consumer，执行后自动从注册表移除。
-     * <p>
-     * 比 {@link #useOnce} 更安全：适配器只在 lambda 内可见，防止漏删。
+     * Uses an adapter in a scoped lambda, then removes it automatically.
+     * Safer than {@link #useOnce}: the adapter is only visible inside the
+     * function, so it cannot be left behind.
      *
-     * @param name     模板名
-     * @param consumer 使用函数（适配器仅在函数内有效）
-     * @param <T>      返回值类型
-     * @return consumer 的返回值
+     * @param name     template name
+     * @param consumer function receiving the adapter
+     * @param <T>      return type
+     * @return the consumer's result
      */
     public <T> T use(String name, Function<JsonAdapter, T> consumer) {
         JsonAdapter adapter = useOnce(name);

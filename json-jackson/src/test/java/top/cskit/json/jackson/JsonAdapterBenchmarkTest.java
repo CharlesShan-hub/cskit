@@ -14,29 +14,33 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * 多 JSON 框架评测套件：正确性对比 + 性能基准（简易 benchmark）
- * <p>
- * 评测对象：gson / fastjson2 / jackson（通过统一 {@link JsonAdapter} 门面）
- * 评测维度：
- * 1. 正确性：序列化/反序列化结果一致性
- * 2. 性能：序列化耗时、反序列化耗时（含预热，降低 JIT 影响）
- * <p>
- * 注意：本测试为简易基准，结论仅供趋势参考；严格基准请使用 JMH。
+ * Multi-framework benchmark suite: correctness comparison + simple
+ * performance benchmark.
+ *
+ * <p>Subjects: gson / fastjson2 / jackson, through the unified
+ * {@link JsonAdapter} facade.
+ * <ul>
+ *   <li>Correctness: serialization/deserialization result consistency</li>
+ *   <li>Performance: serialize and deserialize latency (with warm-up to reduce JIT impact)</li>
+ * </ul>
+ *
+ * <p>Note: this is a simple benchmark for trend reference only; use JMH for
+ * rigorous benchmarking.
  */
 class JsonAdapterBenchmarkTest {
 
-    /** 评测对象注册 */
+    /** Subjects under test. */
     static final List<JsonAdapter> ADAPTERS = List.of(
             new GsonJsonAdapter(),
             new FastJsonJsonAdapter(),
             new JacksonJsonAdapter()
     );
 
-    /** 评测数据集：动物园居民列表（真实业务形态：List<Bean>，实体复用共享 Animal） */
+    /** Dataset: a zoo of animals (realistic shape: List&lt;Bean&gt;, entity reused from Animal). */
     static final List<Animal> ZOO = buildZoo(1000);
 
-    static final int WARMUP_ROUNDS = 2000;  // 预热轮数（触发 JIT）
-    static final int MEASURE_ROUNDS = 20000; // 正式测量轮数
+    static final int WARMUP_ROUNDS = 2000;   // warm-up rounds (trigger JIT)
+    static final int MEASURE_ROUNDS = 20000; // measured rounds
 
     static List<Animal> buildZoo(int size) {
         List<Animal> zoo = new ArrayList<>(size);
@@ -46,68 +50,69 @@ class JsonAdapterBenchmarkTest {
         return zoo;
     }
 
-    // region 1. 正确性评测
+    // region 1. Correctness
 
     @Test
-    @DisplayName("正确性：序列化字段齐全 + 反序列化数据一致")
+    @DisplayName("Correctness: complete serialization fields + consistent deserialization")
     void correctness() {
         for (JsonAdapter adapter : ADAPTERS) {
             String name = adapter.getClass().getSimpleName();
 
-            // 序列化：字段不能丢
+            // Serialization: no field loss
             String json = adapter.toJson(ZOO.get(0));
-            System.out.println("[" + name + "] 序列化示例: " + json);
-            assertEquals(true, json.contains("Animal-0"), name + " 序列化应含 name");
-            assertEquals(true, json.contains("1938"), name + " 序列化应含 birthYear");
+            System.out.println("[" + name + "] serialize sample: " + json);
+            assertEquals(true, json.contains("Animal-0"), name + " serialized should contain name");
+            assertEquals(true, json.contains("1938"), name + " serialized should contain birthYear");
 
-            // 反序列化：数据要还原（单个对象用 fromJson）
+            // Deserialization: data restored
             Animal back = adapter.fromJson(json, Animal.class);
-            assertEquals("Animal-0", back.getName(), name + " 反序列化 name 一致");
-            assertEquals(1938, back.getBirthYear(), name + " 反序列化 birthYear 一致");
+            assertEquals("Animal-0", back.getName(), name + " deserialized name consistent");
+            assertEquals(1938, back.getBirthYear(), name + " deserialized birthYear consistent");
 
-            // 大列表往返：全量校验
+            // Big-list round trip: full check
             String bigJson = adapter.toJson(ZOO);
             List<Animal> bigBack = adapter.fromJsonList(bigJson, Animal.class);
-            assertEquals(ZOO.size(), bigBack.size(), name + " 大列表条数一致");
-            assertEquals(ZOO.get(999).getName(), bigBack.get(999).getName(), name + " 大列表末条一致");
-            System.out.println("[" + name + "] 正确性: ✅ 1000 条往返无丢失\n");
+            assertEquals(ZOO.size(), bigBack.size(), name + " big list size consistent");
+            assertEquals(ZOO.get(999).getName(), bigBack.get(999).getName(), name + " big list last item consistent");
+            System.out.println("[" + name + "] correctness: 1000 items round-trip without loss\n");
         }
     }
 
     // endregion
 
-    // region 2. 性能评测（简易基准）
+    // region 2. Performance (simple benchmark)
 
     @Test
-    @DisplayName("性能：序列化 / 反序列化耗时对比（含预热）")
+    @DisplayName("Performance: serialize / deserialize latency comparison (with warm-up)")
     void performance() {
         String jsonCache = null;
 
-        System.out.println("数据集: " + ZOO.size() + " 条记录, 预热 " + WARMUP_ROUNDS + " 次, 测量 " + MEASURE_ROUNDS + " 次\n");
-        System.out.printf("%-22s %-14s %-14s %s%n", "实现", "序列化(ns)", "反序列化(ns)", "JSON大小");
+        System.out.println("dataset: " + ZOO.size() + " records, warmup " + WARMUP_ROUNDS
+                + " rounds, measure " + MEASURE_ROUNDS + " rounds\n");
+        System.out.printf("%-22s %-14s %-14s %s%n", "impl", "serialize(ns)", "deserialize(ns)", "JSON size");
         System.out.println("-".repeat(72));
 
         for (JsonAdapter adapter : ADAPTERS) {
             String name = adapter.getClass().getSimpleName();
 
-            // 预热：让 JIT 充分编译
+            // Warm-up: let JIT fully compile
             for (int i = 0; i < WARMUP_ROUNDS; i++) {
                 adapter.toJson(ZOO);
             }
 
-            // 测量序列化
+            // Measure serialization
             long serStart = System.nanoTime();
             for (int i = 0; i < MEASURE_ROUNDS; i++) {
                 jsonCache = adapter.toJson(ZOO);
             }
             long serCost = (System.nanoTime() - serStart) / MEASURE_ROUNDS;
 
-            // 预热反序列化
+            // Warm-up deserialization
             for (int i = 0; i < WARMUP_ROUNDS; i++) {
                 adapter.fromJsonList(jsonCache, Animal.class);
             }
 
-            // 测量反序列化
+            // Measure deserialization
             long desStart = System.nanoTime();
             for (int i = 0; i < MEASURE_ROUNDS; i++) {
                 adapter.fromJsonList(jsonCache, Animal.class);
@@ -117,7 +122,8 @@ class JsonAdapterBenchmarkTest {
             System.out.printf("%-22s %-14d %-14d %d bytes%n",
                     name, serCost, desCost, jsonCache.getBytes().length);
         }
-        System.out.println("\n说明: 单次耗时(纳秒)，越小越快；数据为 1000 条记录整体序列化/反序列化。");
+        System.out.println("\nnote: per-call latency (nanoseconds), lower is better; "
+                + "data is a whole 1000-record list serialized/deserialized.");
     }
 
     // endregion

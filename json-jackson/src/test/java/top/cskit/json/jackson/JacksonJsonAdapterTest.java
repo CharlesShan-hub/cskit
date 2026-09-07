@@ -16,22 +16,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Jackson 适配器测试：功能 + 注解翻译层验证
- * <p>
- * 三库横向对比：同一个实体、同一段业务代码，gson / fastjson / jackson 结果一致。
- * 实体复用 {@link Animal} / {@link Employee}（共享测试实体）。
+ * Jackson adapter tests: functionality + annotation translation layer.
+ *
+ * <p>Cross-library comparison: the same entity and the same business code on
+ * gson / fastjson / jackson produce identical results. Entities reused from
+ * {@link Animal} / {@link Employee}.
  */
 class JacksonJsonAdapterTest {
 
     static final JsonAdapter JACKSON = new JacksonJsonAdapter();
 
-    // region 1. 基础功能
+    // region 1. Basic functionality
 
     @Test
-    @DisplayName("对象往返：序列化 + 反序列化")
+    @DisplayName("Round trip: serialize + deserialize")
     void roundTrip() {
         String json = JACKSON.toJson(new Animal("Tom", 1938));
-        System.out.println("序列化: " + json);
+        System.out.println("serialized: " + json);
         assertTrue(json.contains("\"name\":\"Tom\""));
 
         Animal back = JACKSON.fromJson(json, Animal.class);
@@ -40,7 +41,7 @@ class JacksonJsonAdapterTest {
     }
 
     @Test
-    @DisplayName("泛型 List / Map 支持")
+    @DisplayName("Generic List / Map support")
     void genericCollection() {
         String listJson = "[{\"name\":\"Tom\",\"birthYear\":1938},{\"name\":\"Jerry\",\"birthYear\":1940}]";
         String mapJson = "{\"cat\":{\"name\":\"Tom\",\"birthYear\":1938}}";
@@ -55,15 +56,15 @@ class JacksonJsonAdapterTest {
 
     // endregion
 
-    // region 2. 注解翻译层
+    // region 2. Annotation translation layer
 
     @Test
-    @DisplayName("@JsonField 字段重命名：ename 双向翻译")
+    @DisplayName("@JsonField rename: ename translated in both directions")
     void fieldRename() {
         String json = JACKSON.toJson(new Employee("Jack", 10000.5));
-        System.out.println("序列化: " + json);
-        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON 应使用注解名 ename");
-        assertFalse(json.contains("\"name\""), "不应输出 Java 字段名 name");
+        System.out.println("serialized: " + json);
+        assertTrue(json.contains("\"ename\":\"Jack\""), "JSON should use the annotation name ename");
+        assertFalse(json.contains("\"name\""), "Java field name should not be output");
 
         Employee back = JACKSON.fromJson("{\"ename\":\"Tom\",\"salary\":8000.5}", Employee.class);
         assertEquals("Tom", back.getName());
@@ -71,34 +72,34 @@ class JacksonJsonAdapterTest {
     }
 
     @Test
-    @DisplayName("@JsonField serialize=false：不输出但可接收")
+    @DisplayName("@JsonField serialize=false: not output but still read")
     void serializeOff() {
         Employee e = new Employee("Jack", 10000.5);
         e.setCost(8000.0);
 
         String json = JACKSON.toJson(e);
-        System.out.println("序列化: " + json);
-        assertFalse(json.contains("cost"), "serialize=false 字段不应输出");
+        System.out.println("serialized: " + json);
+        assertFalse(json.contains("cost"), "serialize=false field must not be output");
 
         Employee back = JACKSON.fromJson("{\"ename\":\"Jack\",\"salary\":10000.5,\"cost\":8000.0}", Employee.class);
-        assertEquals(8000.0, back.getCost(), 0.001, "外部传入 cost 应被接收");
+        assertEquals(8000.0, back.getCost(), 0.001, "external cost should be accepted");
     }
 
     @Test
-    @DisplayName("@JsonField deserialize=false：可输出但拒绝接收")
+    @DisplayName("@JsonField deserialize=false: output but not read")
     void deserializeOff() {
         String fromAccountant = "{\"ename\":\"Boss\",\"salary\":100000.0,\"profit\":99999.0}";
         Employee boss = JACKSON.fromJson(fromAccountant, Employee.class);
-        System.out.println("反序列化后 profit（应忽略外部值）: " + boss.getProfit());
-        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false 应拒绝外部写入");
+        System.out.println("profit after deserialize (external value ignored): " + boss.getProfit());
+        assertEquals(0.0, boss.getProfit(), 0.001, "deserialize=false must reject external writes");
     }
 
     // endregion
 
-    // region 3. 三库横向对比
+    // region 3. Cross-library comparison
 
     @Test
-    @DisplayName("三库一致性：gson / fastjson / jackson 跑同一段业务代码")
+    @DisplayName("Cross-library consistency: same business code on gson/fastjson/jackson")
     void crossLibraryConsistency() {
         JsonAdapter gson = new GsonJsonAdapter();
         JsonAdapter fastjson = new FastJsonJsonAdapter();
@@ -110,10 +111,10 @@ class JacksonJsonAdapterTest {
             String name = adapter.getClass().getSimpleName();
             Animal back = adapter.fromJson(json, Animal.class);
             System.out.println("[" + name + "] " + back.getName() + " / " + back.getBirthYear());
-            assertEquals("Tom", back.getName(), name + " 反序列化 name 一致");
-            assertEquals(1938, back.getBirthYear(), name + " 反序列化 birthYear 一致");
+            assertEquals("Tom", back.getName(), name + " deserialized name consistent");
+            assertEquals(1938, back.getBirthYear(), name + " deserialized birthYear consistent");
         }
-        System.out.println("✅ gson / fastjson / jackson 三库业务代码完全一致");
+        System.out.println("gson / fastjson / jackson fully consistent for the same business code");
     }
 
     // endregion

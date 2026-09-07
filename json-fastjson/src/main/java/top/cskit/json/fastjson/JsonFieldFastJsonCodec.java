@@ -9,33 +9,34 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 框架注解翻译层（Fastjson 实现）：
- * 通过「字段映射中转」实现——序列化时按 {@code @JsonField} 规则把对象转成
- * 键为注解名的 {@link JSONObject} 再交给 fastjson2；反序列化时把 JSONObject
- * 按规则读回 Java 字段。
- * <p>
- * 与 Gson 版（TypeAdapterFactory）、Jackson 版（AnnotationIntrospector）不同，
- * Fastjson 没有注解内省扩展点，因此采用「中转映射」策略，逻辑直白、不依赖
- * fastjson2 内部流式 API。
+ * Annotation translation layer for Fastjson: a "map-and-forward" strategy.
+ * On write, the object is mapped to a {@link JSONObject} keyed by the
+ * annotation names and handed to fastjson2; on read, the JSONObject is
+ * mapped back into Java fields.
+ *
+ * <p>Unlike Gson ({@code TypeAdapterFactory}) and Jackson
+ * ({@code AnnotationIntrospector}), Fastjson has no annotation introspection
+ * extension point, so this straightforward map-and-forward approach is used,
+ * without depending on fastjson2's internal streaming API.
  */
 public final class JsonFieldFastJsonCodec {
 
     private JsonFieldFastJsonCodec() {
     }
 
-    /** 类是否含有注解差异（重命名或开关），决定是否需要走自定义编解码 */
+    /** Whether the class has annotation differences (rename or switches). */
     public static boolean hasAnnotationDiff(Class<?> clazz) {
         return JsonFieldResolver.resolve(clazz).values().stream()
                 .anyMatch(r -> !r.serialize || !r.deserialize || !r.jsonName.equals(r.javaName));
     }
 
-    /** 序列化：按注解规则转成 JSONObject（键 = 注解名），再交给 fastjson2 */
+    /** Serializes via an intermediate JSONObject keyed by annotation names. */
     public static String toJson(Object obj, Map<String, JsonFieldResolver.FieldRule> rules) {
         JSONObject mapped = new JSONObject(new LinkedHashMap<>());
         for (Map.Entry<String, JsonFieldResolver.FieldRule> entry : rules.entrySet()) {
             JsonFieldResolver.FieldRule rule = entry.getValue();
             if (!rule.serialize) {
-                continue; // 序列化关闭：跳过
+                continue; // serialization disabled: skip
             }
             Field field = getField(obj.getClass(), rule.javaName);
             mapped.put(rule.jsonName, readField(field, obj));
@@ -43,17 +44,17 @@ public final class JsonFieldFastJsonCodec {
         return JSON.toJSONString(mapped);
     }
 
-    /** 反序列化：先解析成 JSONObject，再按注解规则读回 Java 字段 */
+    /** Deserializes: parses to JSONObject, then maps values back to fields. */
     public static <T> T fromJson(String json, Class<T> clazz, Map<String, JsonFieldResolver.FieldRule> rules) {
         JSONObject parsed = JSON.parseObject(json);
         T instance = newInstance(clazz);
         for (Map.Entry<String, JsonFieldResolver.FieldRule> entry : rules.entrySet()) {
             JsonFieldResolver.FieldRule rule = entry.getValue();
             if (!rule.deserialize) {
-                continue; // 反序列化关闭：跳过
+                continue; // deserialization disabled: skip
             }
             if (!parsed.containsKey(rule.jsonName)) {
-                continue; // JSON 中没有该字段
+                continue; // field absent from JSON
             }
             Field field = getField(clazz, rule.javaName);
             Object value = parsed.get(rule.jsonName);
@@ -63,8 +64,9 @@ public final class JsonFieldFastJsonCodec {
     }
 
     /**
-     * 类型适配：fastjson2 的 JSONObject 数值默认是 BigDecimal/Long，
-     * 反射写入原始类型字段前需转成字段声明的类型（Field.set 不做自动拆箱）。
+     * Type adaptation: fastjson2 JSONObject numbers default to BigDecimal/Long;
+     * convert to the declared field type before reflection write (Field.set
+     * does no auto-unboxing).
      */
     private static Object convert(Object value, Class<?> targetType) {
         if (value == null || targetType.isInstance(value)) {
@@ -94,7 +96,7 @@ public final class JsonFieldFastJsonCodec {
         return value;
     }
 
-    // ---- 反射辅助 ----
+    // ---- Reflection helpers ----
 
     private static Field getField(Class<?> clazz, String name) {
         for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
@@ -103,17 +105,17 @@ public final class JsonFieldFastJsonCodec {
                 f.setAccessible(true);
                 return f;
             } catch (NoSuchFieldException ignored) {
-                // 继续向父类查找
+                // continue up the class hierarchy
             }
         }
-        throw new IllegalStateException("字段不存在: " + clazz.getName() + "#" + name);
+        throw new IllegalStateException("Field not found: " + clazz.getName() + "#" + name);
     }
 
     private static Object readField(Field field, Object target) {
         try {
             return field.get(target);
         } catch (IllegalAccessException e) {
-            throw new IllegalStateException("读取字段失败: " + field.getName(), e);
+            throw new IllegalStateException("Failed to read field: " + field.getName(), e);
         }
     }
 
@@ -121,7 +123,7 @@ public final class JsonFieldFastJsonCodec {
         try {
             field.set(target, value);
         } catch (IllegalAccessException e) {
-            throw new IllegalStateException("写入字段失败: " + field.getName(), e);
+            throw new IllegalStateException("Failed to write field: " + field.getName(), e);
         }
     }
 
@@ -130,7 +132,7 @@ public final class JsonFieldFastJsonCodec {
         try {
             return (T) clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            throw new IllegalStateException("无法创建实例: " + clazz.getName() + "（需要无参构造器）", e);
+            throw new IllegalStateException("Cannot instantiate: " + clazz.getName() + " (no-arg constructor required)", e);
         }
     }
 }

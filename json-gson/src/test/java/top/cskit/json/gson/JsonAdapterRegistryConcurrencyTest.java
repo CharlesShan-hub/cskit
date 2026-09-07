@@ -19,17 +19,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 注册表单例的线程安全验证
- * <p>
- * 单例 = 全局共享 → 必须线程安全。验证三个场景：
- * 1. 并发注册：N 个线程同时 register 不同模板，不丢、不串
- * 2. 并发读：注册完成后 N 个线程同时 get，全部拿到正确适配器
- * 3. 读写并发：一边注册一边读取，无异常、结果一致
+ * Thread-safety verification of the singleton registry.
+ *
+ * <p>A singleton is globally shared, so it must be thread-safe. Three
+ * scenarios are verified:
+ * <ol>
+ *   <li>Concurrent registration: N threads register different names, no loss, no mix-up</li>
+ *   <li>Concurrent read: after registration, N threads get the correct adapters</li>
+ *   <li>Read + write concurrency: registering while reading, no errors, consistent results</li>
+ * </ol>
  */
 class JsonAdapterRegistryConcurrencyTest {
 
     @Test
-    @DisplayName("并发注册 + 并发读取：不丢数据、无异常")
+    @DisplayName("Concurrent register + get: no data loss, no exceptions")
     void concurrentRegisterAndGet() throws Exception {
         JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance();
         int threads = 16;
@@ -45,10 +48,10 @@ class JsonAdapterRegistryConcurrencyTest {
                 try {
                     startGate.await();
                     for (int r = 0; r < rounds; r++) {
-                        // 每个线程注册自己的模板名（含线程号，互不冲突）
+                        // Each thread registers its own name (thread-id in it, no conflicts)
                         String name = "tpl-" + idx;
                         registry.register(name, new GsonJsonAdapter());
-                        // 立刻读回来验证一致
+                        // Read it back immediately to verify consistency
                         JsonAdapter got = registry.get(name);
                         if (!(got instanceof GsonJsonAdapter)) {
                             errors.incrementAndGet();
@@ -61,24 +64,24 @@ class JsonAdapterRegistryConcurrencyTest {
             }));
         }
 
-        startGate.countDown(); // 同时放行 16 个线程
+        startGate.countDown(); // release all 16 threads at once
         for (Future<?> f : futures) {
             f.get(30, TimeUnit.SECONDS);
         }
         pool.shutdown();
 
-        System.out.println("并发注册/读取完成, 错误数: " + errors.get());
-        assertEquals(0, errors.get(), "并发下不应出现数据丢失或串号");
+        System.out.println("concurrent register/get done, errors: " + errors.get());
+        assertEquals(0, errors.get(), "no data loss or mix-up under concurrency");
 
-        // 最终一致性：每个模板名都能读到
+        // Final consistency: every template name is readable
         for (int i = 0; i < threads; i++) {
-            assertTrue(registry.contains("tpl-" + i), "模板 tpl-" + i + " 应已注册");
+            assertTrue(registry.contains("tpl-" + i), "template tpl-" + i + " should be registered");
         }
-        System.out.println("16 个线程 × 200 轮 并发注册/读取全部通过");
+        System.out.println("16 threads x 200 rounds concurrent register/get all passed");
     }
 
     @Test
-    @DisplayName("读写并发：注册与读取同时进行，get 始终拿到已注册的值")
+    @DisplayName("Read while write: get always returns a registered value")
     void readWhileWrite() throws Exception {
         JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance();
         registry.register("concurrent-gson", new GsonJsonAdapter());
@@ -88,7 +91,7 @@ class JsonAdapterRegistryConcurrencyTest {
         CountDownLatch startGate = new CountDownLatch(1);
         AtomicInteger errors = new AtomicInteger();
 
-        // 4 个读线程：不断 get 已注册的适配器
+        // 4 reader threads: repeatedly get the registered adapter
         List<Future<?>> readers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             readers.add(pool.submit(() -> {
@@ -107,7 +110,7 @@ class JsonAdapterRegistryConcurrencyTest {
             }));
         }
 
-        // 4 个写线程：反复替换同一模板（模拟运行时扩展）
+        // 4 writer threads: repeatedly replace the same template (runtime extension)
         List<Future<?>> writers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             writers.add(pool.submit(() -> {
@@ -132,8 +135,8 @@ class JsonAdapterRegistryConcurrencyTest {
         }
         pool.shutdown();
 
-        System.out.println("读写并发完成, 错误数: " + errors.get());
-        assertEquals(0, errors.get(), "读线程永远读到已注册的值");
-        System.out.println("4 读 + 4 写 × 500 轮 并发通过");
+        System.out.println("read/write concurrency done, errors: " + errors.get());
+        assertEquals(0, errors.get(), "readers always get a registered value");
+        System.out.println("4 readers + 4 writers x 500 rounds passed");
     }
 }

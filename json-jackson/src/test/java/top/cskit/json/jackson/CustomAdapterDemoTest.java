@@ -19,21 +19,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 自定义适配器接入演示：模拟「公司自研 JSON 库」如何接入 cskit。
- * <p>
- * 场景：公司有自研的 JsonUtil（基于 Gson 二次封装，加了统一的日期格式约定），
- * 业务代码已经全部用它。现在想接入 cskit 统一门面——只需要：
- * 1. 写一个类实现 {@link JsonAdapter}（把公司库的 API 翻译成门面 5 个方法）
- * 2. 注册到 {@link JsonAdapterRegistry}（一行）
- * 之后就能和 gson / fastjson / jackson 一样通过模板名切换，换库零改动。
+ * Custom-adapter integration demo: how an in-house JSON library plugs into
+ * cskit.
+ *
+ * <p>Scenario: a company has its own JsonUtil (Gson-based, with a uniform
+ * date format) and all business code already uses it. To bring it under the
+ * cskit facade, only two steps are needed:
+ * <ol>
+ *   <li>implement {@link JsonAdapter} (translate the library's API into the 5 facade methods)</li>
+ *   <li>register it in {@link JsonAdapterRegistry} (one line)</li>
+ * </ol>
+ * Afterwards it switches by template name like gson / fastjson / jackson,
+ * with zero code change.
  */
 class CustomAdapterDemoTest {
 
-    // ==================== 模拟：公司自研 JSON 库（假设已经存在，不能改） ====================
+    // ==================== Simulated in-house JSON library (assume existing, unmodifiable) ====================
 
     /**
-     * 公司自研库：基于 Gson 二次封装，统一日期格式 + 统一入口。
-     * 真实场景中这是老代码/第三方 jar，我们不能改它，只能适配它。
+     * In-house library: Gson-based wrapper with a uniform date format.
+     * In reality this is legacy code or a third-party jar we cannot change;
+     * we can only adapt to it.
      */
     public static final class CompanyJsonLib {
 
@@ -64,9 +70,9 @@ class CustomAdapterDemoTest {
         }
     }
 
-    // ==================== 适配器：把公司库翻译成 cskit 门面 ====================
+    // ==================== Adapter: translate the in-house library into the cskit facade ====================
 
-    /** 公司库适配器：5 个方法一一对应翻译，业务侧零感知 */
+    /** Company adapter: 5 methods mapped 1:1; business side is unaware. */
     public static class CompanyJsonAdapter implements JsonAdapter {
 
         @Override
@@ -95,12 +101,12 @@ class CustomAdapterDemoTest {
         }
     }
 
-    // ==================== 验证 ====================
+    // ==================== Verification ====================
 
     @Test
-    @DisplayName("自定义适配器接入：注册一行，与官方适配器同台竞技")
+    @DisplayName("Custom adapter integration: one register line, co-exists with official adapters")
     void customAdapterIntegration() {
-        // 0. 确保官方适配器已注册（幂等；真实应用中通常在启动时统一注册）
+        // 0. Ensure official adapters are registered (idempotent; in real apps, done at startup)
         JsonAdapterRegistry reg = JsonAdapterRegistry.getInstance();
         if (!reg.contains("gson")) {
             reg.register("gson", new GsonJsonAdapter());
@@ -109,35 +115,35 @@ class CustomAdapterDemoTest {
             reg.register("fastjson", new FastJsonJsonAdapter());
         }
 
-        // 1. 注册自定义适配器（这就是"接入"的全部代码！）
+        // 1. Register the custom adapter (this is the whole integration!)
         reg.register("company", new CompanyJsonAdapter());
 
-        // 2. 用模板名取用，和 gson/fastjson 完全一样的用法
+        // 2. Fetch by template name, exactly like gson/fastjson
         JsonAdapter company = JsonAdapterRegistry.getInstance().get("company");
         JsonAdapter gson = JsonAdapterRegistry.getInstance().get("gson");
 
-        // 3. 序列化：公司库的日期约定自动生效
+        // 3. Serialize: the company library's date convention applies automatically
         Animal tom = new Animal("Tom", 1938);
         String json = company.toJson(tom);
         System.out.println("[company] toJson: " + json);
         assertTrue(json.contains("\"name\":\"Tom\""));
 
-        // 4. 反序列化：三库结果一致
+        // 4. Deserialize: same result across adapters
         Animal back = company.fromJson(json, Animal.class);
         assertEquals("Tom", back.getName());
         assertEquals(1938, back.getBirthYear());
 
-        // 5. 泛型 List 也支持
+        // 5. Generic List supported too
         String listJson = "[{\"name\":\"Tom\",\"birthYear\":1938},{\"name\":\"Jerry\",\"birthYear\":1940}]";
         List<Animal> list = company.fromJsonList(listJson, Animal.class);
         assertEquals("Jerry", list.get(1).getName());
 
-        // 6. 与官方适配器结果一致（证明门面统一）
+        // 6. Consistent with the official adapter (facade is unified)
         Animal viaGson = gson.fromJson(company.toJson(tom), Animal.class);
         assertEquals(tom.getName(), viaGson.getName());
         assertEquals(tom.getBirthYear(), viaGson.getBirthYear());
 
-        System.out.println("✅ 自定义适配器接入成功：company / gson / fastjson / jackson 四库共存");
+        System.out.println("custom adapter integrated: company / gson / fastjson / jackson coexist");
         for (String name : new String[]{"gson", "fastjson", "company"}) {
             JsonAdapter a = JsonAdapterRegistry.getInstance().get(name);
             System.out.println("[" + name + "] " + a.fromJson(json, Animal.class).getName());
