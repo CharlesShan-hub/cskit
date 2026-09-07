@@ -74,7 +74,7 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 
 ```java
 // 注册表：预注册需要的适配器（可运行时扩展）
-JsonAdapterRegistry registry = new JsonAdapterRegistry()
+JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
         .register("gson", new GsonJsonAdapter())
         .register("fastjson", new FastJsonJsonAdapter());
 

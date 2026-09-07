@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class JsonAdapterDemoTest {
 
-    /** 注册表：预注册 gson 和 fastjson 两个模板 */
-    static final JsonAdapterRegistry REGISTRY = new JsonAdapterRegistry()
+    /** 注册表（全局单例）：预注册 gson 和 fastjson 两个模板 */
+    static final JsonAdapterRegistry REGISTRY = JsonAdapterRegistry.getInstance()
             .register("gson", new GsonJsonAdapter())
             .register("fastjson", new FastJsonJsonAdapter());
 
@@ -110,20 +110,16 @@ class JsonAdapterDemoTest {
     }
 
     @Test
-    @DisplayName("注册表可以运行时扩展新适配器")
-    void runtimeExtend() {
-        JsonAdapterRegistry reg = new JsonAdapterRegistry()
-                .register("gson", new GsonJsonAdapter());
-        assertTrue(!reg.contains("fastjson"));
+    @DisplayName("注册表是全局单例：getInstance 永远返回同一实例")
+    void singleton() {
+        JsonAdapterRegistry a = JsonAdapterRegistry.getInstance();
+        JsonAdapterRegistry b = JsonAdapterRegistry.getInstance();
+        System.out.println("两次 getInstance 是否同一实例: " + (a == b));
+        assertEquals(a, b, "单例注册表应返回同一实例");
 
-        // 运行时扩展（模拟以后接入 Jackson）
-        reg.register("fastjson", new FastJsonJsonAdapter());
-        assertTrue(reg.contains("fastjson"));
-        System.out.println("扩展后模板列表: gson, fastjson");
-
-        // 切换后照常工作
-        Animal back = reg.get("fastjson").fromJson("{\"name\":\"Jerry\",\"birthYear\":1940}", Animal.class);
-        assertEquals("Jerry", back.getName());
+        // 单例的好处：别处注册的模板，这里立即可见
+        assertTrue(a.contains("gson"));
+        assertTrue(a.contains("fastjson"));
     }
 
     // endregion

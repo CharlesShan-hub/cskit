@@ -41,7 +41,7 @@ cskit/
 ```
 
 ```java
-JsonAdapterRegistry registry = new JsonAdapterRegistry()
+JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
         .register("gson", new GsonJsonAdapter())
         .register("fastjson", new FastJsonJsonAdapter());
 
