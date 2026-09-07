@@ -1,64 +1,69 @@
-# cskit-json — JSON 统一门面框架
+# cskit-json — Unified JSON Facade Framework
 
-> 一套 API，任意底层库，可插拔适配器。
-> 业务代码只面向 `top.cskit.json.JsonAdapter` 接口，底层想用谁，在注册表里选一个模板名，**换库零改动**。
+[English](json.md) | [中文](json_zh.md)
 
-## 为什么要有这个框架？
+> One API, any underlying library, pluggable adapters.
+> Business code talks only to the `top.cskit.json.JsonAdapter` interface; pick a template name
+> in the registry for the underlying library — **switch libraries with zero code changes**.
 
-Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
+## Why this framework?
 
-| 库 | 优点 | 痛点 |
+The Java world has many JSON libraries (Gson, Fastjson, Jackson...), each with trade-offs:
+
+| Library | Pros | Cons |
 |---|---|---|
-| Gson | 反射读字段、轻量、稳定 | 性能一般、注解能力弱 |
-| Fastjson2 | 性能极强（实测快 3~14 倍） | 字段可见性要求高、1.x 不兼容 JDK17+ |
-| Jackson | 功能全、生态大、性能好 | 配置繁琐、注解侵入 |
+| Gson | Reads fields via reflection, lightweight, stable | Average performance, weak annotations |
+| Fastjson2 | Extremely fast (measured 3~14x) | Strict field visibility, 1.x incompatible with JDK17+ |
+| Jackson | Feature-rich, big ecosystem, good performance | Verbose config, intrusive annotations |
 
-**问题**：业务代码一旦直接依赖某个库，想换库就要改所有调用处，成本极高。
+**Problem**: once business code directly depends on a library, switching libraries means
+touching every call site — expensive.
 
-**方案**：把「门面接口 + 底层适配」分离——业务代码只面向 `JsonAdapter` 接口，
-底层想用谁，**在注册表里选一个模板名**，换库零改动。
+**Solution**: separate the "facade interface" from "underlying adapters" — business code
+only depends on `JsonAdapter`; pick a template name in the registry for the library you want.
 
-## 架构
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    业务代码                          │
-│          只依赖 top.cskit.json.JsonAdapter           │
+│                  Business Code                      │
+│        depends only on top.cskit.json.JsonAdapter   │
 └─────────────────────────┬───────────────────────────┘
-                          │ 使用
+                          │ uses
 ┌─────────────────────────▼───────────────────────────┐
-│            JsonAdapterRegistry（注册表）              │
+│             JsonAdapterRegistry (registry)           │
 │        register("gson", ...) / register("fastjson")  │
 └──────┬──────────────────────────┬───────────────────┘
        │                          │
 ┌──────▼──────┐          ┌────────▼─────────┐
 │ json-gson   │          │ json-fastjson    │
-│ (Gson 适配) │          │ (Fastjson2 适配) │
+│ (Gson adap.)│          │ (Fastjson2 adap.)│
 └──────┬──────┘          └────────┬─────────┘
        │                          │
 ┌──────▼──────────────────────────▼─────────┐
-│            json-core（零第三方依赖）        │
-│   JsonAdapter 接口 + 注册表 + @JsonField   │
+│          json-core (zero 3rd-party deps)   │
+│   JsonAdapter + registry + @JsonField      │
 └───────────────────────────────────────────┘
 ```
 
-## 模块说明
+## Modules
 
-| 模块 | 职责 | 第三方依赖 |
+| Module | Responsibility | 3rd-party deps |
 |---|---|---|
-| `json-core` | 门面接口、注册表、`@JsonField` 注解、字段解析器 | **零依赖** |
-| `json-gson` | Gson 适配器 + 注解翻译层 | gson |
-| `json-fastjson` | Fastjson2 适配器 | fastjson2 |
-| `json-jackson` | Jackson 适配器 + 注解翻译层 | jackson-databind |
+| `json-core` | Facade interface, registry, `@JsonField`, field resolver | **zero** |
+| `json-gson` | Gson adapter + annotation translation layer | gson |
+| `json-fastjson` | Fastjson2 adapter | fastjson2 |
+| `json-jackson` | Jackson adapter + annotation translation layer | jackson-databind |
 
-> **依赖隔离**：只想用 Gson 的项目只引 `json-core` + `json-gson`，其他库不会进入 classpath。
+> **Dependency isolation**: a project that only wants Gson pulls `json-core` + `json-gson`;
+> other libraries never enter its classpath.
 
-## 快速开始
+## Quick Start
 
-### 1. 引入依赖
+### 1. Add dependencies
 
 ```xml
-<!-- 核心 + 想要的适配器（以 Gson 为例） -->
+<!-- core + the adapter you want (Gson here) -->
 <dependency>
     <groupId>top.cskit</groupId>
     <artifactId>json-core</artifactId>
@@ -71,57 +76,57 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 </dependency>
 ```
 
-### 2. 注册 + 使用
+### 2. Register & use
 
 ```java
-// 注册表：预注册需要的适配器（可运行时扩展）
+// Registry: pre-register the adapters you need (runtime-extensible)
 JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
         .register("gson", new GsonJsonAdapter())
         .register("fastjson", new FastJsonJsonAdapter());
 
-// 模板选择：换库只改这一行
+// Template selection: switch library by changing only this line
 JsonAdapter adapter = registry.get("gson");
 
-// 业务代码只面向接口
-String json = adapter.toJson(user);                          // 序列化
-User u = adapter.fromJson(json, User.class);                 // 反序列化
-List<User> list = adapter.fromJsonList(json, User.class);    // 泛型 List
+// Business code only talks to the interface
+String json = adapter.toJson(user);                          // serialize
+User u = adapter.fromJson(json, User.class);                 // deserialize
+List<User> list = adapter.fromJsonList(json, User.class);    // generic List
 Map<String, Object> map = adapter.fromJsonMap(json);         // Map
 ```
 
-### 3. 统一注解 `@JsonField`
+### 3. Unified annotation `@JsonField`
 
-一套注解，各适配器统一生效（Gson 已支持，其他适配器按需扩展）：
+One annotation, effective across all adapters (Gson supported; others extend as needed):
 
 ```java
 public class Employee {
-    @JsonField("ename")                // 字段重命名（JSON 用 ename）
+    @JsonField("ename")                // rename field (JSON uses ename)
     private String name;
 
-    @JsonField(serialize = false)      // 只读不写（对外隐藏）
+    @JsonField(serialize = false)      // read-only, hidden on output
     private double cost;
 
-    @JsonField(deserialize = false)    // 只写不读（拒绝外部注入）
+    @JsonField(deserialize = false)    // write-only, reject external input
     private double profit;
 }
 ```
 
-### 4. 新增底层库适配（如 Jackson）
+### 4. Add a new library adapter (e.g. Jackson)
 
 ```java
 public class JacksonJsonAdapter implements JsonAdapter {
-    // 实现 5 个接口方法即可
+    // just implement the 5 interface methods
 }
-// 然后注册：
+// then register:
 registry.register("jackson", new JacksonJsonAdapter());
 ```
 
-### 5. 接入自定义适配器（冷门库 / 公司自研库）
+### 5. Plug in a custom adapter (niche / company-internal library)
 
-框架基于「接口 + 注册表」设计，**天然支持任何自定义适配器**——冷门库、公司自研库都能接入：
+Built on "interface + registry", the framework **naturally supports any custom adapter**:
 
 ```java
-// ① 实现 JsonAdapter 接口（把公司库 API 翻译成门面 5 个方法）
+// ① Implement JsonAdapter (translate the company lib into the 5 facade methods)
 public class CompanyJsonAdapter implements JsonAdapter {
     @Override
     public String toJson(Object obj) { return CompanyJsonLib.toJsonString(obj); }
@@ -135,38 +140,39 @@ public class CompanyJsonAdapter implements JsonAdapter {
     public Map<String, Object> fromJsonMap(String json) { return CompanyJsonLib.parseMap(json); }
 }
 
-// ② 注册一行（启动时统一注册，幂等）
+// ② Register in one line (idempotent, do it at startup)
 JsonAdapterRegistry.getInstance().register("company", new CompanyJsonAdapter());
 
-// ③ 与官方适配器一样使用
+// ③ Use it like any official adapter
 JsonAdapter adapter = JsonAdapterRegistry.getInstance().get("company");
 String json = adapter.toJson(user);
 ```
 
-> 接入的好处：公司旧代码不用改，还能和 gson / fastjson / jackson 通过模板名自由切换，
-> 业务侧统一走 `JsonAdapter` 门面，零感知底层差异。
+> Benefit: legacy company code stays untouched, yet can freely switch with
+> gson / fastjson / jackson via template names — business code never sees the difference.
 
-## 性能评测（实测）
+## Benchmark (measured)
 
-数据集 1000 条记录，预热 2000 次 + 测量 20000 次（本机 JDK 21）：
+Dataset: 1000 records, warmup 2000 + measure 20000 rounds (local JDK 21):
 
-| 实现 | 序列化 | 反序列化 | JSON 体积 |
+| Implementation | Serialize | Deserialize | JSON size |
 |---|---|---|---|
 | GsonJsonAdapter | ~288 μs | ~106 μs | 38,891 bytes |
 | FastJsonJsonAdapter | ~21 μs | ~28 μs | 38,891 bytes |
 | JacksonJsonAdapter | ~50 μs | ~99 μs | 38,891 bytes |
 
-> fastjson2 序列化最快（相对 gson 快 ~14 倍）；Jackson 排第二。评测代码见 `json-jackson` 模块的 `JsonAdapterBenchmarkTest`。
+> Fastjson2 is fastest to serialize (~14x vs Gson); Jackson is second.
+> Benchmark code: `JsonAdapterBenchmarkTest` in the `json-jackson` module.
 
-## 设计亮点
+## Design Highlights
 
-1. **适配器模式**：门面接口与底层实现解耦，换库零改动（对标 JDBC / slf4j）
-2. **注册表模式**：命名模板 + fail-fast 防手滑（未注册即抛异常）
-3. **依赖隔离**：core 零第三方依赖，各适配器独立模块按需引入
-4. **统一注解**：`@JsonField` 一套注解翻译到各底层库，业务代码不感知底层差异
-5. **线程安全**：Gson 实例线程安全，适配器单例复用；注册表用 `ConcurrentHashMap`
+1. **Adapter pattern**: facade decoupled from implementations; switch libraries with zero changes (cf. JDBC / slf4j)
+2. **Registry pattern**: named templates + fail-fast (throws on unregistered name)
+3. **Dependency isolation**: core has zero 3rd-party deps; pull only the adapter modules you need
+4. **Unified annotation**: one `@JsonField` translated across all adapters
+5. **Thread safety**: singleton registry backed by `ConcurrentHashMap`, verified by stress tests
 
-## 构建测试
+## Build & Test
 
 ```bash
 mvn test
