@@ -21,7 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * </pre>
  * 新增底层库（Jackson 等）只需实现 {@link JsonAdapter} 并注册，业务代码零改动。
  * <p>
- * 线程安全：内部使用 {@link ConcurrentHashMap}，注册/读取均可并发安全。
+ * <b>线程安全</b>（单例全局共享，必须并发安全）：
+ * <ul>
+ *   <li>饿汉式单例：类加载时创建，JVM 保证只初始化一次；</li>
+ *   <li>内部 {@link ConcurrentHashMap}：register / get / contains 均为原子操作；</li>
+ *   <li>并发注册同名模板为"后写覆盖"，不抛异常、不产生脏数据。</li>
+ * </ul>
+ * 并发安全性已由 {@code JsonAdapterRegistryConcurrencyTest} 压力验证。
  */
 public final class JsonAdapterRegistry {
 
