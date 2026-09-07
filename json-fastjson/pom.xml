@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.cskit</groupId>
+        <artifactId>cskit</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>json-fastjson</artifactId>
+    <packaging>jar</packaging>
+    <name>cskit-json-fastjson</name>
+    <description>Fastjson2 适配器：想用 Fastjson 只需引入本模块（按需加载，不污染其他项目）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+        </dependency>
+    </dependencies>
+</project>

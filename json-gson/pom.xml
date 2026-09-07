@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.cskit</groupId>
+        <artifactId>cskit</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>json-gson</artifactId>
+    <packaging>jar</packaging>
+    <name>cskit-json-gson</name>
+    <description>Gson 适配器：想用 Gson 只需引入本模块</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <!-- 测试：跨适配器对比评测需要 fastjson2 -->
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-fastjson</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.cskit</groupId>
+        <artifactId>cskit</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>json-core</artifactId>
+    <packaging>jar</packaging>
+    <name>cskit-json-core</name>
+    <description>CSKit JSON 框架核心：门面接口 + 适配器注册表 + @JsonField（零第三方依赖，可插拔）</description>
+
+    <!-- 核心模块不依赖任何 JSON 底层库 —— 这就是依赖隔离的关键 -->
+</project>
