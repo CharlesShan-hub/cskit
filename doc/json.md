@@ -76,22 +76,30 @@ only depends on `JsonAdapter`; pick a template name in the registry for the libr
 </dependency>
 ```
 
-### 2. Register & use
+### 2. Register & use — three usage modes
 
 ```java
-// Registry: pre-register the adapters you need (runtime-extensible)
+// Mode 1 - Long-term reuse: register once, use anywhere (registry singleton)
 JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
         .register("gson", new GsonJsonAdapter())
         .register("fastjson", new FastJsonJsonAdapter());
+JsonAdapter adapter = registry.get("gson");   // switch library by changing this line
 
-// Template selection: switch library by changing only this line
-JsonAdapter adapter = registry.get("gson");
-
-// Business code only talks to the interface
 String json = adapter.toJson(user);                          // serialize
 User u = adapter.fromJson(json, User.class);                 // deserialize
 List<User> list = adapter.fromJsonList(json, User.class);    // generic List
 Map<String, Object> map = adapter.fromJsonMap(json);         // Map
+
+// Mode 2 - One-shot: temporary template, gone after use
+registry.register("tmp", new GsonJsonAdapter(builder -> builder.setDateFormat("yyyy-MM-dd")));
+JsonAdapter tmp = registry.useOnce("tmp");          // take & auto-remove
+String j2 = registry.use("tmp", a -> a.toJson(user)); // scoped: removed after lambda
+
+// Mode 3 - Fire-and-forget: never registered, never cached
+String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);              // direct adapter
+String j4 = JsonKit.toJson(
+        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")), // factory (custom)
+        user);
 ```
 
 ### 3. Unified annotation `@JsonField`

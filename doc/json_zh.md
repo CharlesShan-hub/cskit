@@ -73,22 +73,30 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 </dependency>
 ```
 
-### 2. 注册 + 使用
+### 2. 注册 + 使用——三种使用模式
 
 ```java
-// 注册表：预注册需要的适配器（可运行时扩展）
+// 模式一：长期复用（注册一次，随处取用，注册表为全局单例）
 JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
         .register("gson", new GsonJsonAdapter())
         .register("fastjson", new FastJsonJsonAdapter());
+JsonAdapter adapter = registry.get("gson");   // 换库只改这一行
 
-// 模板选择：换库只改这一行
-JsonAdapter adapter = registry.get("gson");
-
-// 业务代码只面向接口
 String json = adapter.toJson(user);                          // 序列化
 User u = adapter.fromJson(json, User.class);                 // 反序列化
 List<User> list = adapter.fromJsonList(json, User.class);    // 泛型 List
 Map<String, Object> map = adapter.fromJsonMap(json);         // Map
+
+// 模式二：一次性使用（临时模板，用完即弃，不污染全局）
+registry.register("tmp", new GsonJsonAdapter(builder -> builder.setDateFormat("yyyy-MM-dd")));
+JsonAdapter tmp = registry.useOnce("tmp");         // 取出即删
+String j2 = registry.use("tmp", a -> a.toJson(user)); // 作用域封闭：lambda 执行完自动移除
+
+// 模式三：即用即弃（压根不注册、不缓存）
+String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);               // 直接传适配器
+String j4 = JsonKit.toJson(
+        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")),  // 工厂版（可定制）
+        user);
 ```
 
 ### 3. 统一注解 `@JsonField`
