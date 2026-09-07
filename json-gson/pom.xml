@@ -24,12 +24,7 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
-        <!-- 测试：JsonAdapterDemoTest 需 fastjson 适配器做模板切换演示 -->
-        <dependency>
-            <groupId>top.cskit</groupId>
-            <artifactId>json-fastjson</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!-- 跨库对比测试已统一迁移至 json-jackson 模块（避免模块间循环依赖） -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

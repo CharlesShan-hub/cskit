@@ -1,4 +1,4 @@
-package top.cskit.json.gson;
+package top.cskit.json.jackson;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;

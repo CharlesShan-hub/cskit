@@ -1,4 +1,4 @@
-package top.cskit.json.gson;
+package top.cskit.json.jackson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
