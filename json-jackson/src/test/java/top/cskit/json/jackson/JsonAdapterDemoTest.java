@@ -7,6 +7,7 @@ import top.cskit.json.JsonAdapter;
 import top.cskit.json.JsonAdapterRegistry;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.testkit.Animal;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * 核心思想：业务代码只面向 {@link JsonAdapter} 接口，
  * 底层实现通过注册表 + 模板名切换（gson / fastjson），换库零改动。
+ * 实体复用 {@link Animal}（共享测试实体）。
  */
 class JsonAdapterDemoTest {
 
@@ -27,35 +29,6 @@ class JsonAdapterDemoTest {
     static final JsonAdapterRegistry REGISTRY = JsonAdapterRegistry.getInstance()
             .register("gson", new GsonJsonAdapter())
             .register("fastjson", new FastJsonJsonAdapter());
-
-    public static class Animal {
-        private String name;
-        private int birthYear;
-
-        public Animal() {
-        }
-
-        public Animal(String name, int birthYear) {
-            this.name = name;
-            this.birthYear = birthYear;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getBirthYear() {
-            return birthYear;
-        }
-
-        public void setBirthYear(int birthYear) {
-            this.birthYear = birthYear;
-        }
-    }
 
     // region 核心演示：同一业务代码，两个底层库
 

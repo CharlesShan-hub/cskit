@@ -3,9 +3,10 @@ package top.cskit.json.jackson;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.cskit.json.JsonAdapter;
-import top.cskit.json.JsonField;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.testkit.Animal;
+import top.cskit.json.testkit.Employee;
 
 import java.util.List;
 import java.util.Map;
@@ -18,93 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Jackson 适配器测试：功能 + 注解翻译层验证
  * <p>
  * 三库横向对比：同一个实体、同一段业务代码，gson / fastjson / jackson 结果一致。
+ * 实体复用 {@link Animal} / {@link Employee}（共享测试实体）。
  */
 class JacksonJsonAdapterTest {
 
     static final JsonAdapter JACKSON = new JacksonJsonAdapter();
-
-    public static class Animal {
-        private String name;
-        private int birthYear;
-
-        public Animal() {
-        }
-
-        public Animal(String name, int birthYear) {
-            this.name = name;
-            this.birthYear = birthYear;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getBirthYear() {
-            return birthYear;
-        }
-
-        public void setBirthYear(int birthYear) {
-            this.birthYear = birthYear;
-        }
-    }
-
-    /** 注解实体：字段重命名 + 序列化/反序列化开关 */
-    public static class Employee {
-        @JsonField("ename")
-        private String name;
-
-        private double salary;
-
-        @JsonField(serialize = false)
-        private double cost;
-
-        @JsonField(deserialize = false)
-        private double profit;
-
-        public Employee() {
-        }
-
-        public Employee(String name, double salary) {
-            this.name = name;
-            this.salary = salary;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public double getSalary() {
-            return salary;
-        }
-
-        public void setSalary(double salary) {
-            this.salary = salary;
-        }
-
-        public double getCost() {
-            return cost;
-        }
-
-        public void setCost(double cost) {
-            this.cost = cost;
-        }
-
-        public double getProfit() {
-            return profit;
-        }
-
-        public void setProfit(double profit) {
-            this.profit = profit;
-        }
-    }
 
     // region 1. 基础功能
 

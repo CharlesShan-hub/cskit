@@ -13,6 +13,7 @@
 
     <modules>
         <module>json-core</module>
+        <module>json-testkit</module>
         <module>json-gson</module>
         <module>json-fastjson</module>
         <module>json-jackson</module>
@@ -33,6 +34,11 @@
             <dependency>
                 <groupId>top.cskit</groupId>
                 <artifactId>json-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>top.cskit</groupId>
+                <artifactId>json-testkit</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

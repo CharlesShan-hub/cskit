@@ -9,6 +9,7 @@ import top.cskit.json.JsonAdapter;
 import top.cskit.json.JsonAdapterRegistry;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.testkit.Animal;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -95,35 +96,6 @@ class CustomAdapterDemoTest {
     }
 
     // ==================== 验证 ====================
-
-    public static class Animal {
-        private String name;
-        private int birthYear;
-
-        public Animal() {
-        }
-
-        public Animal(String name, int birthYear) {
-            this.name = name;
-            this.birthYear = birthYear;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getBirthYear() {
-            return birthYear;
-        }
-
-        public void setBirthYear(int birthYear) {
-            this.birthYear = birthYear;
-        }
-    }
 
     @Test
     @DisplayName("自定义适配器接入：注册一行，与官方适配器同台竞技")

@@ -3,8 +3,8 @@ package top.cskit.json.gson;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.cskit.json.JsonAdapter;
-import top.cskit.json.JsonField;
 import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.testkit.Employee;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 框架统一注解 @JsonField 支持测试（Gson 翻译层）
  * <p>
- * 验证能力：
+ * 验证能力（实体复用 {@link Employee}，与 fastjson/jackson 注解测试共享）：
  * 1. 字段重命名：{@code @JsonField("ename")} → JSON 输出 ename
  * 2. 序列化开关：{@code @JsonField(serialize=false)} → 不输出
  * 3. 反序列化开关：{@code @JsonField(deserialize=false)} → 不接收
@@ -22,62 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JsonFieldAnnotationTest {
 
     static final JsonAdapter GSON = new GsonJsonAdapter();
-
-    /** 员工：演示字段重命名 + 只读 + 只写（老板-会计场景） */
-    public static class Employee {
-        @JsonField("ename")
-        private String name;
-
-        private double salary;
-
-        /** 会计填的，从 JSON 读进来但不序列化出去（类比 @Expose(serialize=false)） */
-        @JsonField(serialize = false)
-        private double cost;
-
-        /** 老板自己算的，序列化给外面看但不从 JSON 读 */
-        @JsonField(deserialize = false)
-        private double profit;
-
-        public Employee() {
-        }
-
-        public Employee(String name, double salary) {
-            this.name = name;
-            this.salary = salary;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public double getSalary() {
-            return salary;
-        }
-
-        public void setSalary(double salary) {
-            this.salary = salary;
-        }
-
-        public double getCost() {
-            return cost;
-        }
-
-        public void setCost(double cost) {
-            this.cost = cost;
-        }
-
-        public double getProfit() {
-            return profit;
-        }
-
-        public void setProfit(double profit) {
-            this.profit = profit;
-        }
-    }
 
     @Test
     @DisplayName("字段重命名：@JsonField(\"ename\") 序列化/反序列化都用 ename")

@@ -4,6 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.cskit.json.JsonAdapter;
 import top.cskit.json.JsonAdapterRegistry;
+import top.cskit.json.gson.GsonJsonAdapter;
+import top.cskit.json.testkit.Animal;
+import top.cskit.json.testkit.Tourist;
 
 import java.util.Date;
 import java.util.List;
@@ -19,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 验证「命名注册表」设计：把定制配置按名字注册进 {@link JsonAdapterRegistry}，
  * 之后按名字取用——这正是宝宝最早提出的思路，如今由框架自身的
  * {@link JsonAdapterRegistry} + 定制构造的 {@link GsonJsonAdapter} 实现。
+ * 实体复用 {@link Animal} / {@link Tourist}（共享测试实体）。
  */
 class NamedGsonRegistryTest {
 
@@ -28,68 +32,6 @@ class NamedGsonRegistryTest {
                     builder.setDateFormat("yyyy-MM-dd HH:mm:ss").setPrettyPrinting()))
             .register("null-keep", new GsonJsonAdapter(builder -> builder.serializeNulls()))
             .register("default", new GsonJsonAdapter());
-
-    // region demo 实体
-
-    public static class Animal {
-        private String name;
-        private int birthYear;
-
-        public Animal() {
-        }
-
-        public Animal(String name, int birthYear) {
-            this.name = name;
-            this.birthYear = birthYear;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getBirthYear() {
-            return birthYear;
-        }
-
-        public void setBirthYear(int birthYear) {
-            this.birthYear = birthYear;
-        }
-    }
-
-    public static class Tourist {
-        private String name;
-        private Date birthday;
-
-        public Tourist() {
-        }
-
-        public Tourist(String name, Date birthday) {
-            this.name = name;
-            this.birthday = birthday;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Date getBirthday() {
-            return birthday;
-        }
-
-        public void setBirthday(Date birthday) {
-            this.birthday = birthday;
-        }
-    }
-
-    // endregion
 
     @Test
     @DisplayName("命名定制：set().set() 链式注册 + 按名字复用")

@@ -6,6 +6,7 @@ import top.cskit.json.JsonAdapter;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
 import top.cskit.json.jackson.JacksonJsonAdapter;
+import top.cskit.json.testkit.Animal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ class JsonAdapterBenchmarkTest {
             new JacksonJsonAdapter()
     );
 
-    /** 评测数据集：动物园居民列表（真实业务形态：List<Bean>） */
+    /** 评测数据集：动物园居民列表（真实业务形态：List<Bean>，实体复用共享 Animal） */
     static final List<Animal> ZOO = buildZoo(1000);
 
     static final int WARMUP_ROUNDS = 2000;  // 预热轮数（触发 JIT）
@@ -43,35 +44,6 @@ class JsonAdapterBenchmarkTest {
             zoo.add(new Animal("Animal-" + i, 1938 + i % 80));
         }
         return zoo;
-    }
-
-    public static class Animal {
-        private String name;
-        private int birthYear;
-
-        public Animal() {
-        }
-
-        public Animal(String name, int birthYear) {
-            this.name = name;
-            this.birthYear = birthYear;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getBirthYear() {
-            return birthYear;
-        }
-
-        public void setBirthYear(int birthYear) {
-            this.birthYear = birthYear;
-        }
     }
 
     // region 1. 正确性评测

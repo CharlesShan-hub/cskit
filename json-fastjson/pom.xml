@@ -24,6 +24,12 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
         </dependency>
+        <!-- 共享测试实体（DRY） -->
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 跨库对比测试已统一迁移至 json-jackson 模块（避免模块间循环依赖） -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

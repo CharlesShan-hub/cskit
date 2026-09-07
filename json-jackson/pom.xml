@@ -24,6 +24,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <!-- 共享测试实体（DRY） -->
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 测试：三库横向对比需要 gson + fastjson 适配器 -->
         <dependency>
             <groupId>top.cskit</groupId>

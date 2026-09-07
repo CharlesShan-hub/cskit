@@ -3,10 +3,10 @@ package top.cskit.json.jackson;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.cskit.json.JsonAdapter;
-import top.cskit.json.JsonField;
 import top.cskit.json.fastjson.FastJsonJsonAdapter;
 import top.cskit.json.gson.GsonJsonAdapter;
 import top.cskit.json.jackson.JacksonJsonAdapter;
+import top.cskit.json.testkit.Employee;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,64 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Fastjson 注解翻译层测试：{@code @JsonField} 在 fastjson2 底层生效，
  * 且与 Gson / Jackson 结果一致（一套注解，三库统一）。
+ * 实体复用 {@link Employee}（共享测试实体，三库共用同一个类证明注解统一）。
  */
 class FastJsonAnnotationTest {
 
     static final JsonAdapter FASTJSON = new FastJsonJsonAdapter();
-
-    /** 注解实体：字段重命名 + 序列化/反序列化开关（三库共用同一个类，证明注解统一） */
-    public static class Employee {
-        @JsonField("ename")
-        private String name;
-
-        private double salary;
-
-        @JsonField(serialize = false)
-        private double cost;
-
-        @JsonField(deserialize = false)
-        private double profit;
-
-        public Employee() {
-        }
-
-        public Employee(String name, double salary) {
-            this.name = name;
-            this.salary = salary;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public double getSalary() {
-            return salary;
-        }
-
-        public void setSalary(double salary) {
-            this.salary = salary;
-        }
-
-        public double getCost() {
-            return cost;
-        }
-
-        public void setCost(double cost) {
-            this.cost = cost;
-        }
-
-        public double getProfit() {
-            return profit;
-        }
-
-        public void setProfit(double profit) {
-            this.profit = profit;
-        }
-    }
 
     @Test
     @DisplayName("字段重命名：@JsonField(\"ename\") 双向翻译")

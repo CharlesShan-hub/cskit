@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.cskit</groupId>
+        <artifactId>cskit</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>json-testkit</artifactId>
+    <packaging>jar</packaging>
+    <name>cskit-json-testkit</name>
+    <description>共享测试实体：供各适配器模块的测试复用（DRY，避免每个测试重复定义实体类）</description>
+
+    <!-- 实体 Employee 使用框架注解 @JsonField，需要 json-core -->
+    <dependencies>
+        <dependency>
+            <groupId>top.cskit</groupId>
+            <artifactId>json-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>
