@@ -73,30 +73,39 @@ Java 世界有 Gson、Fastjson、Jackson 等众多 JSON 库，各有优缺点：
 </dependency>
 ```
 
-### 2. 注册 + 使用——三种使用模式
+### 2. JsonKit —— 统一方法名 + 重载（一个名字，四种用法）
+
+同一个方法名，不同参数类型 = 不同使用模式（避免一堆不同名字的 API）：
 
 ```java
-// 模式一：长期复用（注册一次，随处取用，注册表为全局单例）
-JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
-        .register("gson", new GsonJsonAdapter())
-        .register("fastjson", new FastJsonJsonAdapter());
-JsonAdapter adapter = registry.get("gson");   // 换库只改这一行
+// ① 默认适配器（configure 一次即可，对齐 YshJson 的 DEFAULT_GSON，但可随意切换）
+JsonKit.configureDefault(new GsonJsonAdapter());
+String j1 = JsonKit.toJson(user);
 
-String json = adapter.toJson(user);                          // 序列化
-User u = adapter.fromJson(json, User.class);                 // 反序列化
-List<User> list = adapter.fromJsonList(json, User.class);    // 泛型 List
-Map<String, Object> map = adapter.fromJsonMap(json);         // Map
+// ② 模板名（走注册表，长期复用）
+String j2 = JsonKit.toJson("gson", user);
 
-// 模式二：一次性使用（临时模板，用完即弃，不污染全局）
-registry.register("tmp", new GsonJsonAdapter(builder -> builder.setDateFormat("yyyy-MM-dd")));
-JsonAdapter tmp = registry.useOnce("tmp");         // 取出即删
-String j2 = registry.use("tmp", a -> a.toJson(user)); // 作用域封闭：lambda 执行完自动移除
+// ③ 适配器实例（一次性：不注册、不缓存）
+String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);
 
-// 模式三：即用即弃（压根不注册、不缓存）
-String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);               // 直接传适配器
+// ④ 适配器工厂（一次性 + 定制，每次 new 即弃，对齐 YshJson 定制路径）
 String j4 = JsonKit.toJson(
-        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")),  // 工厂版（可定制）
-        user);
+        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")), user);
+```
+
+```java
+// fromJson 同样四种重载
+User u1 = JsonKit.fromJson(json, User.class);                            // 默认
+User u2 = JsonKit.fromJson("gson", json, User.class);                    // 模板名
+User u3 = JsonKit.fromJson(new GsonJsonAdapter(), json, User.class);     // 实例
+User u4 = JsonKit.fromJson(() -> new GsonJsonAdapter(), json, User.class); // 工厂
+```
+
+```java
+// 注册表也支持一次性：临时模板，用完即删
+registry.register("tmp", new GsonJsonAdapter());
+JsonAdapter tmp = registry.useOnce("tmp");            // 取出即删
+String j5 = registry.use("tmp", a -> a.toJson(user));  // 作用域封闭：lambda 执行完自动移除
 ```
 
 ### 3. 统一注解 `@JsonField`

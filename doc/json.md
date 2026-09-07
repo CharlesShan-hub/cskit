@@ -76,30 +76,39 @@ only depends on `JsonAdapter`; pick a template name in the registry for the libr
 </dependency>
 ```
 
-### 2. Register & use — three usage modes
+### 2. JsonKit — unified API by overloads (one name, four modes)
+
+Same method name, different param types = different usage mode (no API-name explosion):
 
 ```java
-// Mode 1 - Long-term reuse: register once, use anywhere (registry singleton)
-JsonAdapterRegistry registry = JsonAdapterRegistry.getInstance()
-        .register("gson", new GsonJsonAdapter())
-        .register("fastjson", new FastJsonJsonAdapter());
-JsonAdapter adapter = registry.get("gson");   // switch library by changing this line
+// ① default adapter (configure once, like YshJson's DEFAULT_GSON but switchable)
+JsonKit.configureDefault(new GsonJsonAdapter());
+String j1 = JsonKit.toJson(user);
 
-String json = adapter.toJson(user);                          // serialize
-User u = adapter.fromJson(json, User.class);                 // deserialize
-List<User> list = adapter.fromJsonList(json, User.class);    // generic List
-Map<String, Object> map = adapter.fromJsonMap(json);         // Map
+// ② template name (registry long-term reuse)
+String j2 = JsonKit.toJson("gson", user);
 
-// Mode 2 - One-shot: temporary template, gone after use
-registry.register("tmp", new GsonJsonAdapter(builder -> builder.setDateFormat("yyyy-MM-dd")));
-JsonAdapter tmp = registry.useOnce("tmp");          // take & auto-remove
-String j2 = registry.use("tmp", a -> a.toJson(user)); // scoped: removed after lambda
+// ③ adapter instance (one-shot: not registered, not cached)
+String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);
 
-// Mode 3 - Fire-and-forget: never registered, never cached
-String j3 = JsonKit.toJson(new GsonJsonAdapter(), user);              // direct adapter
+// ④ adapter factory (one-shot + customize, new-and-discard like YshJson)
 String j4 = JsonKit.toJson(
-        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")), // factory (custom)
-        user);
+        () -> new GsonJsonAdapter(b -> b.setDateFormat("yyyy-MM-dd")), user);
+```
+
+```java
+// fromJson: same four overloads
+User u1 = JsonKit.fromJson(json, User.class);                          // default
+User u2 = JsonKit.fromJson("gson", json, User.class);                  // template
+User u3 = JsonKit.fromJson(new GsonJsonAdapter(), json, User.class);   // instance
+User u4 = JsonKit.fromJson(() -> new GsonJsonAdapter(), json, User.class); // factory
+```
+
+```java
+// Registry one-shot too: temporary template, gone after use
+registry.register("tmp", new GsonJsonAdapter());
+JsonAdapter tmp = registry.useOnce("tmp");               // take & auto-remove
+String j5 = registry.use("tmp", a -> a.toJson(user));      // scoped: removed after lambda
 ```
 
 ### 3. Unified annotation `@JsonField`
